@@ -88,6 +88,32 @@
       justify-content:space-between;
       color: var(--muted);
     }
+
+    .settings{
+      margin: 14px 0 4px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.94);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow2);
+      padding: 14px 16px;
+      display:flex;
+      flex-wrap:wrap;
+      gap: 12px 18px;
+      align-items:flex-end;
+    }
+    .setting{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width: 170px;
+    }
+    .setting label{font-size:12px;font-weight:900;color:var(--muted)}
+    .setting input{border:1px solid var(--line);border-radius:12px;padding:9px 10px;font-size:13px;background:white;min-width:0}
+    .setting small{color:var(--muted);font-size:11px;line-height:1.4}
+
+    .modeButtons{display:flex;gap:8px;flex-wrap:wrap}
+    .modeButtons button{box-shadow:none;padding:8px 12px;border-radius:12px;font-weight:800;font-size:12.5px}
+    .modeButtons button[data-active="true"]{border-color: rgba(79,124,255,.35);background: rgba(79,124,255,.10);}
     .paceGuide .label{font-weight:950;font-size:12.5px;letter-spacing:.25px;color:var(--text)}
     .paceGuide .txt{font-size:12.5px;line-height:1.5}
     .paceGuide b{color:var(--text)}
@@ -365,7 +391,7 @@
       <div class="logo">MP</div>
       <div>
         <h1>Adaptive Marathon Plan</h1>
-        <div class="sub">17 weeks • Goal 3:30 • Long run Saturday • Mark sessions Done/Missed to adapt</div>
+        <div class="sub" id="planSub">17 weeks • Long run Saturday • Mark sessions Done/Missed to adapt</div>
       </div>
     </div>
 
@@ -392,13 +418,41 @@
     </div>
   </div>
 
+  <div class="settings" aria-label="Plan settings">
+    <div class="setting">
+      <label for="halfInput">Half Marathon (hh:mm:ss)</label>
+      <input id="halfInput" type="text" inputmode="numeric" placeholder="1:40:00" />
+    </div>
+    <div class="setting">
+      <label for="marathonInput">Marathon goal (optional)</label>
+      <input id="marathonInput" type="text" inputmode="numeric" placeholder="3:30:00" />
+      <small id="marathonEstimate">Estimated Marathon Goal: —</small>
+    </div>
+    <div class="setting">
+      <label for="longRunCap">Long run cap (minutes)</label>
+      <select id="longRunCap">
+        <option value="160">160</option>
+        <option value="170">170</option>
+        <option value="180">180</option>
+        <option value="190">190</option>
+      </select>
+    </div>
+    <div class="setting">
+      <label>Weekly volume</label>
+      <div class="modeButtons" id="modeButtons">
+        <button type="button" data-mode="standard">Standard</button>
+        <button type="button" data-mode="conservative">Conservative</button>
+      </div>
+    </div>
+    <div class="setting" style="min-width:120px">
+      <label>&nbsp;</label>
+      <button id="recompute">Recompute Plan</button>
+    </div>
+  </div>
+
   <div class="paceGuide" aria-label="Pace guide">
     <div class="label">Pace guide (adjust by feel &amp; heat):</div>
-    <div class="txt">
-      Easy: <b>5:45–6:30/km</b> • Long: <b>5:30–6:10/km</b><br/>
-      Marathon pace (MP): <b>4:55–5:05/km</b><br/>
-      Threshold/Tempo: <b>4:30–4:40/km</b> • Intervals: <b>4:05–4:20/km</b>
-    </div>
+    <div class="txt" id="paceText"></div>
   </div>
 
   <div class="weekGrid" id="weekGrid" aria-live="polite"></div>
@@ -425,11 +479,7 @@
   // -----------------------------
   // Config + pace guide (same inputs)
   // -----------------------------
-  const CONFIG = {
-    weeks: 17,
-    targetMarathon: { hours: 3, minutes: 30 },
-    recentHalfMarathon: { hours: 1, minutes: 40 },
-  };
+  const CONFIG = { weeks: 17 };
 
   const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]; // 0..6
 
@@ -444,18 +494,64 @@
   function uid(prefix){ return `${prefix}_${Math.random().toString(36).slice(2,9)}`; }
   function minToText(min){ const h=Math.floor(min/60); const m=min%60; return h?`${h}h ${m}m`:`${m}m`; }
 
-  const HM_SECONDS = toSeconds(CONFIG.recentHalfMarathon.hours, CONFIG.recentHalfMarathon.minutes);
-  const MP_SECONDS = toSeconds(CONFIG.targetMarathon.hours, CONFIG.targetMarathon.minutes);
-  const HM_PACE = pacePerKmFromRace(HM_SECONDS, 21.0975);
-  const GOAL_MP = pacePerKmFromRace(MP_SECONDS, 42.195);
+  function parseTime(str){
+    if (!str) return null;
+    const parts = str.trim().split(':').map(p=>Number(p));
+    if (parts.some(Number.isNaN)) return null;
+    if (parts.length===3){ return toSeconds(parts[0], parts[1], parts[2]); }
+    if (parts.length===2){ return toSeconds(0, parts[0], parts[1]); }
+    if (parts.length===1){ return Number(parts[0]); }
+    return null;
+  }
+  function formatTime(sec){
+    const s = Math.max(0, Math.round(sec));
+    const h = Math.floor(s/3600);
+    const m = Math.floor((s%3600)/60);
+    const r = s%60;
+    if (h>0) return `${h}:${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+    return `${m}:${String(r).padStart(2,'0')}`;
+  }
+  function estimateMarathonFromHalf(halfSeconds){
+    const ratio = 42.195/21.0975;
+    return Math.round(halfSeconds * Math.pow(ratio, 1.06));
+  }
 
-  const PACE = {
-    easy: [GOAL_MP + 46, GOAL_MP + 91],
-    long: [GOAL_MP + 31, GOAL_MP + 71],
-    mp:   [GOAL_MP - 4,  GOAL_MP + 6],
-    tempo:[HM_PACE - 14, HM_PACE - 4],
-    int:  [HM_PACE - 39, HM_PACE - 24],
+  const DEFAULT_SETTINGS = { halfTime: '1:40:00', marathonTime: '', longRunCap: 180, mode: 'standard' };
+  const SETTINGS_KEY = 'marathonPlanSettings_v1';
+  function loadSettings(){
+    try{
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_SETTINGS };
+    }catch{
+      return { ...DEFAULT_SETTINGS };
+    }
+  }
+  function saveSettings(s){
+    try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }catch{}
+  }
+
+  let settings = loadSettings();
+  let goalHalfSeconds = parseTime(settings.halfTime) || toSeconds(1,40,0);
+  let goalMarathonSeconds = parseTime(settings.marathonTime) || estimateMarathonFromHalf(goalHalfSeconds);
+
+  function computePaces(){
+    const hmPace = pacePerKmFromRace(goalHalfSeconds, 21.0975);
+    const mpPace = pacePerKmFromRace(goalMarathonSeconds, 42.195);
+    return {
+      easy: [mpPace + 46, mpPace + 91],
+      long: [mpPace + 31, mpPace + 71],
+      mp:   [mpPace - 4,  mpPace + 6],
+      tempo:[hmPace - 14, hmPace - 4],
+      int:  [hmPace - 39, hmPace - 24],
+    };
+  }
+  let PACE = computePaces();
+
+  const VOLUME_MODES = {
+    standard: { baseStart: 250, peak: 410, baseRamp: 15, buildRamp: 18, recoveryCut: 0.75, longRunScale: 1 },
+    conservative: { baseStart: 220, peak: 370, baseRamp: 12, buildRamp: 15, recoveryCut: 0.78, longRunScale: 0.9 },
   };
+  function currentVolumeProfile(){ return VOLUME_MODES[settings.mode] || VOLUME_MODES.standard; }
 
   // -----------------------------
   // Plan model
@@ -471,30 +567,40 @@
 
   function generateWeek(weekIndex){
     const phase = weekPhase(weekIndex);
-    const baseStart = 250;
-    const peak = 410;
+    const profile = currentVolumeProfile();
+    const baseStart = profile.baseStart;
+    const peak = profile.peak;
+    const baseRamp = profile.baseRamp;
+    const buildRamp = profile.buildRamp;
+    const recoveryCut = profile.recoveryCut;
+    const capMinutes = Number(settings.longRunCap) || 180;
+    const longRunScale = profile.longRunScale;
 
     let runMin;
-    if (phase === 'Base') runMin = baseStart + weekIndex*15;
-    else if (phase === 'Build') runMin = baseStart + 6*15 + (weekIndex-6)*18;
+    if (phase === 'Base') runMin = baseStart + weekIndex*baseRamp;
+    else if (phase === 'Build') runMin = baseStart + 6*baseRamp + (weekIndex-6)*buildRamp;
     else if (phase === 'Peak') runMin = peak - (13-weekIndex)*10;
     else {
       const t = weekIndex - 14;
       runMin = Math.round(peak * (t===1 ? 0.75 : t===2 ? 0.6 : 0.45));
     }
+    runMin = Math.min(runMin, peak);
 
     const isRecovery = (phase !== 'Taper') && ((weekIndex+1) % 4 === 0);
-    if (isRecovery) runMin = Math.round(runMin * 0.75);
+    if (isRecovery) runMin = Math.round(runMin * recoveryCut);
 
-    const longMinByPhase = (() => {
+    const longMinBase = (() => {
       if (phase === 'Base') return clamp(90 + weekIndex*10, 90, 140);
       if (phase === 'Build') return clamp(135 + (weekIndex-6)*10, 135, 180);
       if (phase === 'Peak') return 190;
       return clamp(120 - (weekIndex-14)*20, 70, 120);
     })();
-    const longMin = isRecovery && phase !== 'Taper' ? Math.round(longMinByPhase * 0.75) : longMinByPhase;
+    const scaledLong = Math.min(capMinutes, Math.round(longMinBase * longRunScale));
+    let longMin = isRecovery && phase !== 'Taper' ? Math.round(scaledLong * recoveryCut) : scaledLong;
+    longMin = Math.min(longMin, capMinutes);
 
     const tuesdayKey = (() => {
+      if (weekIndex < 3) return { title: "Strides / Light pickups", minutes: 50, details: `Easy run ${fmtPace(PACE.easy[0])}–${fmtPace(PACE.easy[1])}. Add 6–8×20s strides or 6×1m steady pickups with easy recoveries.` };
       if (phase === 'Taper') return { title: "Sharpening Intervals", minutes: 55, details: `WU 15m • 6×400m @ ${fmtPace(PACE.int[0])}–${fmtPace(PACE.int[1])} • CD 10m` };
       if (isRecovery) return { title: "Light Fartlek", minutes: 50, details: `Easy 15m • 6×1m steady (~${fmtPace(PACE.tempo[0])}–${fmtPace(PACE.tempo[1])}) w/ 1m easy` };
       return { title: "Intervals", minutes: phase === 'Base' ? 55 : 65, details: `WU 15m • 5–8×3m @ ${fmtPace(PACE.int[0])}–${fmtPace(PACE.int[1])} w/ 2m easy • CD 10m` };
@@ -508,10 +614,10 @@
     })();
 
     const fixed = tuesdayKey.minutes + thursdayKey.minutes + longMin;
-    const remaining = Math.max(0, runMin - fixed);
-    const wedMin = clamp(Math.round(remaining*0.35), 35, 70);
-    const friMin = clamp(Math.round(remaining*0.30), 30, 60);
-    const sunMin = clamp(remaining - wedMin - friMin, 25, 60);
+    let remaining = Math.max(0, runMin - fixed);
+    const wedMin = (() => { const v = clamp(Math.round(remaining*0.35), 25, 70); const used = Math.min(v, remaining); remaining -= used; return used; })();
+    const friMin = (() => { const v = clamp(Math.round(remaining*0.40), 20, 60); const used = Math.min(v, remaining); remaining -= used; return used; })();
+    const sunMin = Math.min(Math.max(remaining, 20), 60);
 
     const days = DAY_NAMES.map((_, i) => ({ dayIndex:i, sessions:[] }));
 
@@ -583,13 +689,13 @@
   // -----------------------------
   // Persistence
   // -----------------------------
-  const STORAGE_KEY = 'marathonPlan17w_weekview_v2';
+  const STORAGE_KEY = 'marathonPlan17w_weekview_v3';
   function loadState(){
     try{ const raw=localStorage.getItem(STORAGE_KEY); return raw?JSON.parse(raw):null; }
     catch{ return null; }
   }
   function saveState(state){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch{}
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, settingsUsed: settings })); }catch{}
   }
 
   // -----------------------------
@@ -665,7 +771,15 @@
     selTitle: document.getElementById('selTitle'),
     selSub: document.getElementById('selSub'),
     btnCompact: document.getElementById('btnCompact'),
-    btnDetailed: document.getElementById('btnDetailed')
+    btnDetailed: document.getElementById('btnDetailed'),
+    halfInput: document.getElementById('halfInput'),
+    marathonInput: document.getElementById('marathonInput'),
+    marathonEstimate: document.getElementById('marathonEstimate'),
+    longRunCap: document.getElementById('longRunCap'),
+    recompute: document.getElementById('recompute'),
+    modeButtons: document.getElementById('modeButtons'),
+    paceText: document.getElementById('paceText'),
+    planSub: document.getElementById('planSub'),
   };
 
   // UI mode: compact = details collapsed by default, detailed = expanded by default
@@ -674,6 +788,63 @@
     UI.detailed = detailed;
     if (el.btnCompact) el.btnCompact.setAttribute('data-active', String(!detailed));
     if (el.btnDetailed) el.btnDetailed.setAttribute('data-active', String(!!detailed));
+  }
+
+  function updateModeButtons(){
+    if (!el.modeButtons) return;
+    const buttons = el.modeButtons.querySelectorAll('button[data-mode]');
+    buttons.forEach(btn => btn.setAttribute('data-active', String(btn.getAttribute('data-mode')===settings.mode)));
+  }
+
+  function updatePaceGuide(){
+    if (el.paceText){
+      el.paceText.innerHTML = `Easy: <b>${fmtPace(PACE.easy[0])}–${fmtPace(PACE.easy[1])}</b> • Long: <b>${fmtPace(PACE.long[0])}–${fmtPace(PACE.long[1])}</b><br/>`+
+        `Marathon pace (MP): <b>${fmtPace(PACE.mp[0])}–${fmtPace(PACE.mp[1])}</b><br/>`+
+        `Threshold/Tempo: <b>${fmtPace(PACE.tempo[0])}–${fmtPace(PACE.tempo[1])}</b> • Intervals: <b>${fmtPace(PACE.int[0])}–${fmtPace(PACE.int[1])}</b>`;
+    }
+    const estBase = parseTime(el.halfInput?.value) || goalHalfSeconds;
+    const est = estimateMarathonFromHalf(estBase);
+    const manualGoal = parseTime(el.marathonInput?.value);
+    if (el.marathonEstimate){
+      el.marathonEstimate.textContent = manualGoal
+        ? `Estimated Marathon Goal: ${formatTime(est)} • Using manual goal ${formatTime(manualGoal)}`
+        : `Estimated Marathon Goal: ${formatTime(est)}`;
+    }
+    if (el.planSub){
+      const goalLabel = settings.marathonTime ? formatTime(goalMarathonSeconds) : `~${formatTime(goalMarathonSeconds)} (est)`;
+      el.planSub.textContent = `17 weeks • Marathon goal ${goalLabel} • Long run Saturday • Mark sessions Done/Missed to adapt`;
+    }
+  }
+
+  function syncSettingsUI(){
+    if (el.halfInput) el.halfInput.value = settings.halfTime;
+    if (el.marathonInput) el.marathonInput.value = settings.marathonTime;
+    if (el.longRunCap) el.longRunCap.value = String(settings.longRunCap);
+    updateModeButtons();
+    updatePaceGuide();
+  }
+
+  function applySettingsFromUI(){
+    const parsedHalf = parseTime(el.halfInput?.value) || goalHalfSeconds;
+    const parsedMarathon = parseTime(el.marathonInput?.value);
+    goalHalfSeconds = parsedHalf;
+    goalMarathonSeconds = parsedMarathon || estimateMarathonFromHalf(goalHalfSeconds);
+
+    settings = {
+      halfTime: formatTime(goalHalfSeconds),
+      marathonTime: parsedMarathon ? formatTime(goalMarathonSeconds) : '',
+      longRunCap: Number(el.longRunCap?.value) || DEFAULT_SETTINGS.longRunCap,
+      mode: settings.mode,
+    };
+    saveSettings(settings);
+    PACE = computePaces();
+    syncSettingsUI();
+    state = initState(true);
+    selected = state.selected;
+    bindWeekSelect();
+    renderWeek(state.plan, state.activeWeek);
+    saveState({plan: state.plan, activeWeek: state.activeWeek, selected});
+    toast('Plan updated.');
   }
 
 
@@ -894,10 +1065,11 @@
   // -----------------------------
   // Boot state
   // -----------------------------
-  function initState(){
+  function initState(forceFresh=false){
     const fresh = { plan: generatePlan(), activeWeek: 0, selected: {weekIndex:0, sessionId:null} };
-    const saved = loadState();
-    if (saved && saved.plan && Array.isArray(saved.plan) && saved.plan.length===CONFIG.weeks){
+    const saved = forceFresh ? null : loadState();
+    const matchesSettings = saved?.settingsUsed && ['halfTime','marathonTime','longRunCap','mode'].every(k => saved.settingsUsed[k] === settings[k]);
+    if (!forceFresh && saved && matchesSettings && saved.plan && Array.isArray(saved.plan) && saved.plan.length===CONFIG.weeks){
       return {
         plan: saved.plan,
         activeWeek: typeof saved.activeWeek==='number' ? saved.activeWeek : 0,
@@ -907,6 +1079,7 @@
     return fresh;
   }
 
+  syncSettingsUI();
   let state = initState();
   selected = state.selected;
 
@@ -1002,6 +1175,20 @@
     el.btnDetailed.addEventListener('click', ()=>{ setMode(true); renderWeek(state.plan, state.activeWeek); });
     setMode(true);
   }
+
+  if (el.modeButtons){
+    el.modeButtons.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-mode]');
+      if (!btn) return;
+      settings.mode = btn.getAttribute('data-mode') || 'standard';
+      saveSettings(settings);
+      updateModeButtons();
+      applySettingsFromUI();
+    });
+  }
+  if (el.recompute) el.recompute.addEventListener('click', applySettingsFromUI);
+  if (el.halfInput) el.halfInput.addEventListener('input', updatePaceGuide);
+  if (el.marathonInput) el.marathonInput.addEventListener('input', updatePaceGuide);
 
   bindWeekSelect();
   renderWeek(state.plan, state.activeWeek);
