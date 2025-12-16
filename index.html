@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Marathon Plan • 17 Weeks • Adaptive</title>
+  <style>
+    :root{
+      --bg1:#f6f9ff;
+      --bg2:#eef6ff;
+      --card:#ffffff;
+      --card2:#f7fbff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:#dbeafe;
+      --blue:#4f7cff;
+      --blue2:#93c5fd;
+      --done:#10b981;
+      --miss:#ef4444;
+      --shadow: 0 14px 34px rgba(15, 23, 42, .10);
+      --shadow2: 0 8px 18px rgba(15, 23, 42, .08);
+      --radius: 22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background:
+        radial-gradient(900px 600px at 15% 0%, rgba(79,124,255,.18), transparent 60%),
+        radial-gradient(900px 600px at 95% 10%, rgba(147,197,253,.22), transparent 62%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      color:var(--text);
+    }
+
+    header{
+      position:sticky; top:0; z-index:50;
+      background: rgba(255,255,255,.88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    .topbar{
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 14px 16px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{
+      width:42px;height:42px;border-radius:16px;
+      background: linear-gradient(135deg, rgba(79,124,255,1), rgba(147,197,253,1));
+      display:grid;place-items:center;font-weight:900;color:white;
+      box-shadow: 0 10px 22px rgba(79,124,255,.22);
+      flex:0 0 auto;
+    }
+    h1{margin:0;font-size:16px;font-weight:950;letter-spacing:.2px}
+    .sub{margin:2px 0 0;color:var(--muted);font-size:12px;line-height:1.35}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    button, select{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.95);
+      border-radius:14px;
+      padding:9px 12px;
+      font-weight:900;
+      color:var(--text);
+      box-shadow: var(--shadow2);
+    }
+    button{cursor:pointer}
+    button:hover{filter:brightness(1.02)}
+    button:active{transform:translateY(1px)}
+
+    main{max-width: 1220px; margin:0 auto; padding: 16px 16px 80px}
+
+    .weekMeta{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.82);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 14px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .weekMeta .left{display:flex;flex-direction:column;gap:4px}
+    .weekTitle{font-weight:950;font-size:16px}
+    .weekPhase{color:var(--muted);font-size:12px;line-height:1.4}
+    .totals{color:var(--muted);font-size:12px;line-height:1.4}
+
+    /* WEEK VIEW: whole week per page.
+       - Desktop: 7-column grid.
+       - Tablet: 3 columns.
+       - Mobile: 1 column (still whole week on page).
+    */
+    .weekGrid{
+      margin-top: 14px;
+      display:grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 14px;
+      align-items:start;
+    }
+    @media (max-width: 1150px){
+      .weekGrid{grid-template-columns: repeat(3, minmax(0, 1fr));}
+    }
+    @media (max-width: 740px){
+      .weekGrid{grid-template-columns: 1fr;}
+    }
+
+    .dayCard{
+      border:1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(255,255,255,.88);
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+      min-height: 120px;
+    }
+    .dayHdr{
+      padding: 12px 12px 10px;
+      background: linear-gradient(180deg, rgba(234,242,255,.95), rgba(255,255,255,.70));
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .dayHdr .name{font-weight:950;font-size:13px}
+    .dayHdr .meta{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.25}
+    .dayHdr .mins{font-size:11px;color:var(--muted);white-space:nowrap}
+
+    .dayBody{padding: 12px; display:flex; flex-direction:column; gap: 10px}
+
+    .sectionLabel{
+      font-size:11px;
+      font-weight:950;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+
+    .session{
+      border:1px solid var(--line);
+      background: rgba(247,251,255,.95);
+      border-radius: 16px;
+      overflow:hidden;
+    }
+    .sessionTop{
+      padding: 10px 10px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+      cursor:pointer;
+    }
+    .sessionTitle{font-weight:950;font-size:13px;line-height:1.2}
+    .sessionSub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.25}
+
+    .badge{
+      font-size:10.5px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.9);
+      color: var(--muted);
+      white-space:nowrap;
+    }
+
+    .details{display:none; padding: 0 10px 10px; font-size:12px; color:var(--muted); line-height:1.45}
+    .session[data-open="true"] .details{display:block}
+
+    .recoveryGroup{
+      border:1px dashed rgba(79,124,255,.28);
+      background: rgba(234,242,255,.40);
+      border-radius: 16px;
+      padding: 10px;
+    }
+    .recoveryHdr{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      cursor:pointer;
+      font-weight:950;
+      font-size:12px;
+    }
+    .recoveryCount{
+      font-weight:900;
+      color: var(--muted);
+      font-size:11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.8);
+    }
+    .recoveryBody{display:none; margin-top:10px; gap:10px; flex-direction:column}
+    .recoveryGroup[data-open="true"] .recoveryBody{display:flex}
+
+    /* Selection + statuses */
+    .session[data-selected="true"]{ box-shadow: 0 0 0 3px rgba(79,124,255,.12) inset; border-color: rgba(79,124,255,.25); }
+    .session[data-status="done"]{ box-shadow: 0 0 0 3px rgba(16,185,129,.10) inset; border-color: rgba(16,185,129,.25); }
+    .session[data-status="missed"]{ box-shadow: 0 0 0 3px rgba(239,68,68,.08) inset; border-color: rgba(239,68,68,.22); opacity:.95; }
+
+    /* Single global action bar */
+    .actionBar{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      background: rgba(255,255,255,.92);
+      border-top: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+      z-index:60;
+    }
+    .actionInner{
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 10px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .selInfo{display:flex;flex-direction:column;gap:2px;min-width: 180px}
+    .selInfo b{font-size:12px}
+    .selInfo span{font-size:11px;color:var(--muted);max-width: 520px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    .btnRow{display:flex;gap:8px;flex-wrap:wrap}
+    .btnRow button{box-shadow:none}
+    .btnRow .done{border-color: rgba(16,185,129,.35)}
+    .btnRow .miss{border-color: rgba(239,68,68,.28)}
+
+    /* Toast */
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 62px;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,.95);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 12.5px;
+      box-shadow: var(--shadow);
+      display:none;
+      z-index: 999;
+    }
+    .toast.show{display:block}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">MP</div>
+      <div>
+        <h1>Adaptive Marathon Plan</h1>
+        <div class="sub">17 weeks • Goal 3:30 • Long run Saturday • Mark sessions Done/Missed to adapt</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="prevWeek">◀ Week</button>
+      <select id="weekSelect" aria-label="Select week"></select>
+      <button id="nextWeek">Week ▶</button>
+      <button id="reset" title="Reset progress">Reset</button>
+      <button id="tests" title="Run self-tests">Tests</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="weekMeta" id="weekMeta">
+    <div class="left">
+      <div class="weekTitle" id="weekTitle">Week</div>
+      <div class="weekPhase" id="weekPhase">Phase</div>
+    </div>
+    <div class="totals" id="weekTotals">Totals</div>
+  </div>
+
+  <div class="weekGrid" id="weekGrid" aria-live="polite"></div>
+</main>
+
+<div class="actionBar">
+  <div class="actionInner">
+    <div class="selInfo">
+      <b id="selTitle">Select a session</b>
+      <span id="selSub">Tap a session card to show actions</span>
+    </div>
+    <div class="btnRow">
+      <button class="done" data-set="done">Done</button>
+      <button class="miss" data-set="missed">Missed</button>
+      <button data-set="planned">Planned</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  // -----------------------------
+  // Config + pace guide (same inputs)
+  // -----------------------------
+  const CONFIG = {
+    weeks: 17,
+    targetMarathon: { hours: 3, minutes: 30 },
+    recentHalfMarathon: { hours: 1, minutes: 40 },
+  };
+
+  const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]; // 0..6
+
+  function toSeconds(h, m, s=0){ return h*3600 + m*60 + s; }
+  function pacePerKmFromRace(seconds, km){ return seconds / km; }
+  function fmtPace(secPerKm){
+    const mm = Math.floor(secPerKm / 60);
+    const ss = Math.round(secPerKm % 60);
+    return `${mm}:${String(ss).padStart(2,'0')}/km`;
+  }
+  function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
+  function uid(prefix){ return `${prefix}_${Math.random().toString(36).slice(2,9)}`; }
+  function minToText(min){ const h=Math.floor(min/60); const m=min%60; return h?`${h}h ${m}m`:`${m}m`; }
+
+  const HM_SECONDS = toSeconds(CONFIG.recentHalfMarathon.hours, CONFIG.recentHalfMarathon.minutes);
+  const MP_SECONDS = toSeconds(CONFIG.targetMarathon.hours, CONFIG.targetMarathon.minutes);
+  const HM_PACE = pacePerKmFromRace(HM_SECONDS, 21.0975);
+  const GOAL_MP = pacePerKmFromRace(MP_SECONDS, 42.195);
+
+  const PACE = {
+    easy: [GOAL_MP + 46, GOAL_MP + 91],
+    long: [GOAL_MP + 31, GOAL_MP + 71],
+    mp:   [GOAL_MP - 4,  GOAL_MP + 6],
+    tempo:[HM_PACE - 14, HM_PACE - 4],
+    int:  [HM_PACE - 39, HM_PACE - 24],
+  };
+
+  // -----------------------------
+  // Plan model
+  // -----------------------------
+  function weekPhase(i){
+    if (i <= 5) return "Base";
+    if (i <= 11) return "Build";
+    if (i <= 13) return "Peak";
+    return "Taper";
+  }
+
+  function isKeyRun(session){ return session.sport === 'run' && session.intensity === 'key'; }
+
+  function generateWeek(weekIndex){
+    const phase = weekPhase(weekIndex);
+    const baseStart = 250;
+    const peak = 410;
+
+    let runMin;
+    if (phase === 'Base') runMin = baseStart + weekIndex*15;
+    else if (phase === 'Build') runMin = baseStart + 6*15 + (weekIndex-6)*18;
+    else if (phase === 'Peak') runMin = peak - (13-weekIndex)*10;
+    else {
+      const t = weekIndex - 14;
+      runMin = Math.round(peak * (t===1 ? 0.75 : t===2 ? 0.6 : 0.45));
+    }
+
+    const isRecovery = (phase !== 'Taper') && ((weekIndex+1) % 4 === 0);
+    if (isRecovery) runMin = Math.round(runMin * 0.75);
+
+    const longMinByPhase = (() => {
+      if (phase === 'Base') return clamp(90 + weekIndex*10, 90, 140);
+      if (phase === 'Build') return clamp(135 + (weekIndex-6)*10, 135, 180);
+      if (phase === 'Peak') return 190;
+      return clamp(120 - (weekIndex-14)*20, 70, 120);
+    })();
+    const longMin = isRecovery && phase !== 'Taper' ? Math.round(longMinByPhase * 0.75) : longMinByPhase;
+
+    const tuesdayKey = (() => {
+      if (phase === 'Taper') return { title: "Sharpening Intervals", minutes: 55, details: `WU 15m • 6×400m @ ${fmtPace(PACE.int[0])}–${fmtPace(PACE.int[1])} • CD 10m` };
+      if (isRecovery) return { title: "Light Fartlek", minutes: 50, details: `Easy 15m • 6×1m steady (~${fmtPace(PACE.tempo[0])}–${fmtPace(PACE.tempo[1])}) w/ 1m easy` };
+      return { title: "Intervals", minutes: phase === 'Base' ? 55 : 65, details: `WU 15m • 5–8×3m @ ${fmtPace(PACE.int[0])}–${fmtPace(PACE.int[1])} w/ 2m easy • CD 10m` };
+    })();
+
+    const thursdayKey = (() => {
+      if (phase === 'Taper') return { title: "Marathon Pace Tune-up", minutes: 60, details: `WU 15m • 2×10m @ MP (${fmtPace(PACE.mp[0])}–${fmtPace(PACE.mp[1])}) w/ 5m easy • CD` };
+      if (phase === 'Peak') return { title: "Extended MP", minutes: 80, details: `WU 15m • 40m @ MP (${fmtPace(PACE.mp[0])}–${fmtPace(PACE.mp[1])}) • CD 10m` };
+      if (isRecovery) return { title: "Steady Aerobic", minutes: 65, details: `Mostly easy (${fmtPace(PACE.easy[0])}–${fmtPace(PACE.easy[1])}). Finish 10m steady.` };
+      return { title: "Tempo / MP Blend", minutes: phase === 'Base' ? 70 : 75, details: `WU 15m • 20m tempo (${fmtPace(PACE.tempo[0])}–${fmtPace(PACE.tempo[1])}) then 15m @ MP • CD` };
+    })();
+
+    const fixed = tuesdayKey.minutes + thursdayKey.minutes + longMin;
+    const remaining = Math.max(0, runMin - fixed);
+    const wedMin = clamp(Math.round(remaining*0.35), 35, 70);
+    const friMin = clamp(Math.round(remaining*0.30), 30, 60);
+    const sunMin = clamp(remaining - wedMin - friMin, 25, 60);
+
+    const days = DAY_NAMES.map((_, i) => ({ dayIndex:i, sessions:[] }));
+
+    // Monday
+    days[0].sessions.push({ id:uid('rest'), sport:'rest', title:'Rest / Mobility', minutes:0, intensity:'recovery', optional:false,
+      details:'Off feet. 10–15m mobility: calves, hips, hamstrings, T-spine.', status:'planned', moved:false });
+    days[0].sessions.push({ id:uid('str'), sport:'strength', title:'Strength (light)', minutes:25, intensity:'recovery', optional:true,
+      details:'20–30m: single-leg, glutes, core. Keep it easy.', status:'planned', moved:false });
+
+    // Tuesday
+    days[1].sessions.push({ id:uid('run'), sport:'run', title:tuesdayKey.title, minutes:tuesdayKey.minutes, intensity:'key', optional:false,
+      details:tuesdayKey.details, status:'planned', moved:false });
+    days[1].sessions.push({ id:uid('sw'), sport:'swim', title:'Swim (easy recovery)', minutes:25, intensity:'recovery', optional:true,
+      details:'Easy continuous + drills. Keep HR low.', status:'planned', moved:false });
+
+    // Wednesday
+    days[2].sessions.push({ id:uid('run'), sport:'run', title:'Easy Run', minutes:wedMin, intensity:'easy', optional:false,
+      details:`Easy ${fmtPace(PACE.easy[0])}–${fmtPace(PACE.easy[1])}. Add 6×20s strides if fresh.`, status:'planned', moved:false });
+    days[2].sessions.push({ id:uid('str'), sport:'strength', title:'Strength (optional)', minutes:20, intensity:'recovery', optional:true,
+      details:'Core + hips. Avoid heavy legs midweek.', status:'planned', moved:false });
+
+    // Thursday
+    days[3].sessions.push({ id:uid('run'), sport:'run', title:thursdayKey.title, minutes:thursdayKey.minutes, intensity:'key', optional:false,
+      details:thursdayKey.details, status:'planned', moved:false });
+    days[3].sessions.push({ id:uid('bk'), sport:'bike', title:'Bike (easy spin)', minutes:30, intensity:'recovery', optional:true,
+      details:'Z1–Z2, high cadence. Pure recovery.', status:'planned', moved:false });
+
+    // Friday
+    days[4].sessions.push({ id:uid('run'), sport:'run', title:'Easy + Strides', minutes:friMin, intensity:'easy', optional:false,
+      details:`Easy ${fmtPace(PACE.easy[0])}–${fmtPace(PACE.easy[1])}. Finish 6×15s strides.`, status:'planned', moved:false });
+    days[4].sessions.push({ id:uid('sw'), sport:'swim', title:'Swim (easy)', minutes:20, intensity:'recovery', optional:true,
+      details:'Relaxed swim or pool walk. Keep it easy.', status:'planned', moved:false });
+
+    // Saturday long run
+    const longDetails = (() => {
+      if (phase === 'Peak' && !isRecovery) return `Long run ${fmtPace(PACE.long[0])}–${fmtPace(PACE.long[1])}. Include 2×20m @ MP (${fmtPace(PACE.mp[0])}–${fmtPace(PACE.mp[1])}) w/ 10m easy between. Practice fueling.`;
+      if (phase === 'Build' && !isRecovery) return `Long run ${fmtPace(PACE.long[0])}–${fmtPace(PACE.long[1])}. Last 20m slightly faster if good (≤ MP).`;
+      if (phase === 'Taper') return `Long run ${fmtPace(PACE.long[0])}–${fmtPace(PACE.long[1])}. Comfortable. No hero efforts.`;
+      return `Long run ${fmtPace(PACE.long[0])}–${fmtPace(PACE.long[1])}. Conversational. Fuel 30–60g carbs/hour + fluids.`;
+    })();
+
+    days[5].sessions.push({ id:uid('run'), sport:'run', title:'Long Run (Saturday)', minutes:longMin, intensity:'key', optional:false,
+      details:longDetails, status:'planned', moved:false });
+    days[5].sessions.push({ id:uid('bk'), sport:'bike', title:'Bike (optional flush)', minutes:25, intensity:'recovery', optional:true,
+      details:'Very easy spin later if legs feel heavy.', status:'planned', moved:false });
+
+    // Sunday
+    days[6].sessions.push({ id:uid('run'), sport:'run', title:'Recovery Run', minutes:sunMin, intensity:'easy', optional:false,
+      details:`Very easy ${fmtPace(PACE.easy[0])}–${fmtPace(PACE.easy[1])}. Keep it gentle.`, status:'planned', moved:false });
+    days[6].sessions.push({ id:uid('sw'), sport:'swim', title:'Swim (recovery)', minutes:20, intensity:'recovery', optional:true,
+      details:'Easy technique + mobility in the water.', status:'planned', moved:false });
+
+    const phaseNote = (() => {
+      if (phase === 'Base') return 'Base: build consistency. Keep easy days easy.';
+      if (phase === 'Build') return 'Build: longer workouts. Fuel + recover.';
+      if (phase === 'Peak') return 'Peak: practice MP + fueling. Respect fatigue.';
+      return 'Taper: reduce volume, keep a touch of intensity, sleep.';
+    })();
+
+    return { weekIndex, phase: `${phase}${isRecovery ? ' (Recovery)' : ''} • ${phaseNote}`, days };
+  }
+
+  function generatePlan(){
+    const weeks=[];
+    for (let i=0;i<CONFIG.weeks;i++) weeks.push(generateWeek(i));
+    return weeks;
+  }
+
+  // -----------------------------
+  // Persistence
+  // -----------------------------
+  const STORAGE_KEY = 'marathonPlan17w_weekview_v2';
+  function loadState(){
+    try{ const raw=localStorage.getItem(STORAGE_KEY); return raw?JSON.parse(raw):null; }
+    catch{ return null; }
+  }
+  function saveState(state){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch{}
+  }
+
+  // -----------------------------
+  // Adaptive rescheduling (same idea)
+  // -----------------------------
+  function findSession(week, sessionId){
+    for (const d of week.days){
+      const s = d.sessions.find(x=>x.id===sessionId);
+      if (s) return {day:d, session:s};
+    }
+    return null;
+  }
+  function dayHasKeyRun(day){ return day.sessions.some(isKeyRun); }
+  function moveSession(week, fromDayIndex, toDayIndex, sessionId){
+    const from = week.days[fromDayIndex];
+    const to = week.days[toDayIndex];
+    const idx = from.sessions.findIndex(s=>s.id===sessionId);
+    if (idx===-1) return false;
+    const [s] = from.sessions.splice(idx,1);
+    s.moved = true;
+    to.sessions.unshift(s);
+    return true;
+  }
+  function convertToEasyRun(session){
+    session.title = 'Converted Easy Run';
+    session.intensity = 'easy';
+    session.minutes = clamp(session.minutes, 30, 45);
+    session.details = `Easy ${fmtPace(PACE.easy[0])}–${fmtPace(PACE.easy[1])}. This replaced a missed key session.`;
+    session.moved = true;
+  }
+
+  function applyMissedAdaptiveRule(plan, weekIndex, sessionId){
+    const week = plan[weekIndex];
+    const found = findSession(week, sessionId);
+    if (!found) return;
+    const fromDayIndex = found.day.dayIndex;
+    const s = found.session;
+    if (!isKeyRun(s)) return;
+
+    const candidates=[];
+    if (fromDayIndex===5) candidates.push(6); // Sat -> Sun
+    for (let step=1; step<=6; step++) candidates.push((fromDayIndex+step)%7);
+
+    for (const toDayIndex of candidates){
+      if (toDayIndex===fromDayIndex) continue;
+      if (toDayIndex===0) continue; // don't move onto Mon rest
+      const toDay = week.days[toDayIndex];
+      if (dayHasKeyRun(toDay)) continue;
+      if (moveSession(week, fromDayIndex, toDayIndex, sessionId)){
+        toast(`Moved key session to ${DAY_NAMES[toDayIndex]}.`);
+        return;
+      }
+    }
+
+    convertToEasyRun(s);
+    toast('Couldn’t reschedule safely — converted to an easy run.');
+  }
+
+  // -----------------------------
+  // UI
+  // -----------------------------
+  const el = {
+    weekSelect: document.getElementById('weekSelect'),
+    prevWeek: document.getElementById('prevWeek'),
+    nextWeek: document.getElementById('nextWeek'),
+    reset: document.getElementById('reset'),
+    tests: document.getElementById('tests'),
+    weekTitle: document.getElementById('weekTitle'),
+    weekPhase: document.getElementById('weekPhase'),
+    weekTotals: document.getElementById('weekTotals'),
+    weekGrid: document.getElementById('weekGrid'),
+    toast: document.getElementById('toast'),
+    selTitle: document.getElementById('selTitle'),
+    selSub: document.getElementById('selSub')
+  };
+
+  function toast(msg){
+    el.toast.textContent = msg;
+    el.toast.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>el.toast.classList.remove('show'), 2200);
+  }
+
+  function sportBadge(s){
+    const sport = s.sport==='run'?'Run':s.sport==='bike'?'Bike':s.sport==='swim'?'Swim':s.sport==='strength'?'Strength':s.sport==='rest'?'Rest':s.sport;
+    const mins = s.minutes ? ` • ${minToText(s.minutes)}` : '';
+    const opt = s.optional ? ' • opt' : '';
+    const mv = s.moved ? ' • moved' : '';
+    return `${sport}${mins}${opt}${mv}`;
+  }
+
+  function computeWeekTotals(week){
+    let run=0,bike=0,swim=0,str=0;
+    for (const d of week.days){
+      for (const s of d.sessions){
+        if (s.status==='missed') continue;
+        if (s.sport==='run') run += s.minutes;
+        if (s.sport==='bike') bike += s.minutes;
+        if (s.sport==='swim') swim += s.minutes;
+        if (s.sport==='strength') str += s.minutes;
+      }
+    }
+    return {run,bike,swim,str,total:run+bike+swim+str};
+  }
+
+  // Selection + single action bar
+  let selected = { weekIndex: 0, sessionId: null };
+
+  function setSelected(weekIndex, session){
+    selected.weekIndex = weekIndex;
+    selected.sessionId = session.id;
+    el.selTitle.textContent = session.title;
+    el.selSub.textContent = sportBadge(session);
+  }
+
+  function clearSelectionUI(){
+    el.weekGrid.querySelectorAll('.session').forEach(n => n.setAttribute('data-selected','false'));
+  }
+
+  function renderWeek(plan, weekIndex){
+    const w = plan[weekIndex];
+    el.weekTitle.textContent = `Week ${weekIndex+1} of ${CONFIG.weeks}`;
+    el.weekPhase.textContent = w.phase;
+
+    const totals = computeWeekTotals(w);
+    el.weekTotals.textContent = `Totals (excl. missed): Run ${minToText(totals.run)} • Bike ${minToText(totals.bike)} • Swim ${minToText(totals.swim)} • Strength ${minToText(totals.str)} • All ${minToText(totals.total)}`;
+
+    el.weekGrid.innerHTML = '';
+
+    for (const d of w.days){
+      const dayEl = document.createElement('div');
+      dayEl.className = 'dayCard';
+
+      const nonMissedRunMin = d.sessions.filter(s=>s.sport==='run' && s.status!=='missed').reduce((a,b)=>a+b.minutes,0);
+
+      dayEl.innerHTML = `
+        <div class="dayHdr">
+          <div>
+            <div class="name">${DAY_NAMES[d.dayIndex]}</div>
+            <div class="meta">${nonMissedRunMin ? `${minToText(nonMissedRunMin)} run` : '—'}</div>
+          </div>
+          <div class="mins">${d.dayIndex===5?'Long run':''}</div>
+        </div>
+        <div class="dayBody"></div>
+      `;
+
+      const body = dayEl.querySelector('.dayBody');
+
+      // Primary = first non-optional run if present, otherwise first session
+      const primary = (() => {
+        const p = d.sessions.find(s => s.sport==='run' && !s.optional);
+        return p || d.sessions[0];
+      })();
+
+      const recovery = d.sessions.filter(s => s.id !== primary.id);
+
+      const primaryWrap = document.createElement('div');
+      primaryWrap.innerHTML = `
+        <div class="sectionLabel"><span>Primary</span><span>Tap to expand</span></div>
+      `;
+      primaryWrap.appendChild(renderSessionCard(primary, weekIndex));
+      body.appendChild(primaryWrap);
+
+      if (recovery.length){
+        const group = document.createElement('div');
+        group.className = 'recoveryGroup';
+        group.setAttribute('data-open','false');
+        group.innerHTML = `
+          <div class="recoveryHdr" role="button" aria-expanded="false">
+            <span>Recovery / Optional</span>
+            <span class="recoveryCount">${recovery.length}</span>
+          </div>
+          <div class="recoveryBody"></div>
+        `;
+        const hdr = group.querySelector('.recoveryHdr');
+        const b = group.querySelector('.recoveryBody');
+        hdr.addEventListener('click', () => {
+          const open = group.getAttribute('data-open')==='true';
+          group.setAttribute('data-open', String(!open));
+          hdr.setAttribute('aria-expanded', String(!open));
+        });
+        for (const s of recovery) b.appendChild(renderSessionCard(s, weekIndex));
+        body.appendChild(group);
+      }
+
+      el.weekGrid.appendChild(dayEl);
+    }
+
+    // Re-apply selection highlight if selection is in this week
+    clearSelectionUI();
+    if (selected.weekIndex === weekIndex && selected.sessionId){
+      const node = el.weekGrid.querySelector(`.session[data-sid="${selected.sessionId}"]`);
+      if (node) node.setAttribute('data-selected','true');
+    }
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#039;');
+  }
+
+  function renderSessionCard(session, weekIndex){
+    const sEl = document.createElement('div');
+    sEl.className = 'session';
+    sEl.setAttribute('data-sid', session.id);
+    sEl.setAttribute('data-open','false');
+    sEl.setAttribute('data-selected','false');
+    sEl.setAttribute('data-status', session.status);
+
+    const key = isKeyRun(session) ? 'Key' : (session.sport==='run' ? 'Easy' : 'Recovery');
+
+    sEl.innerHTML = `
+      <div class="sessionTop" role="button" aria-expanded="false">
+        <div style="min-width:0">
+          <div class="sessionTitle">${escapeHtml(session.title)}</div>
+          <div class="sessionSub">${escapeHtml(key)} • ${escapeHtml(sportBadge(session))}</div>
+        </div>
+        <span class="badge">${escapeHtml(session.status)}</span>
+      </div>
+      <div class="details">${escapeHtml(session.details || '')}</div>
+    `;
+
+    const top = sEl.querySelector('.sessionTop');
+
+    // Tap header: toggle details + select
+    top.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearSelectionUI();
+      sEl.setAttribute('data-selected','true');
+      setSelected(weekIndex, session);
+
+      const open = sEl.getAttribute('data-open')==='true';
+      sEl.setAttribute('data-open', String(!open));
+      top.setAttribute('aria-expanded', String(!open));
+    });
+
+    // Tap card background: select (no toggle)
+    sEl.addEventListener('click', () => {
+      clearSelectionUI();
+      sEl.setAttribute('data-selected','true');
+      setSelected(weekIndex, session);
+    });
+
+    return sEl;
+  }
+
+  function setSessionStatus(plan, weekIndex, sessionId, status){
+    const w = plan[weekIndex];
+    const found = findSession(w, sessionId);
+    if (!found) return;
+
+    const s = found.session;
+    const prev = s.status;
+    s.status = status;
+
+    if (prev !== 'missed' && status === 'missed'){
+      applyMissedAdaptiveRule(plan, weekIndex, sessionId);
+    }
+
+    saveState({plan, activeWeek: weekIndex, selected});
+    renderWeek(plan, weekIndex);
+  }
+
+  // -----------------------------
+  // Boot state
+  // -----------------------------
+  function initState(){
+    const fresh = { plan: generatePlan(), activeWeek: 0, selected: {weekIndex:0, sessionId:null} };
+    const saved = loadState();
+    if (saved && saved.plan && Array.isArray(saved.plan) && saved.plan.length===CONFIG.weeks){
+      return {
+        plan: saved.plan,
+        activeWeek: typeof saved.activeWeek==='number' ? saved.activeWeek : 0,
+        selected: saved.selected || {weekIndex:0, sessionId:null}
+      };
+    }
+    return fresh;
+  }
+
+  let state = initState();
+  selected = state.selected;
+
+  function bindWeekSelect(){
+    el.weekSelect.innerHTML='';
+    for (let i=0;i<CONFIG.weeks;i++){
+      const opt=document.createElement('option');
+      opt.value=String(i);
+      opt.textContent=`Week ${i+1} • ${weekPhase(i)}`;
+      el.weekSelect.appendChild(opt);
+    }
+    el.weekSelect.value=String(state.activeWeek);
+    el.weekSelect.addEventListener('change', () => {
+      state.activeWeek = Number(el.weekSelect.value);
+      saveState({plan: state.plan, activeWeek: state.activeWeek, selected});
+      renderWeek(state.plan, state.activeWeek);
+    });
+  }
+
+  function changeWeek(delta){
+    state.activeWeek = clamp(state.activeWeek + delta, 0, CONFIG.weeks-1);
+    el.weekSelect.value = String(state.activeWeek);
+    saveState({plan: state.plan, activeWeek: state.activeWeek, selected});
+    renderWeek(state.plan, state.activeWeek);
+  }
+
+  el.prevWeek.addEventListener('click', ()=>changeWeek(-1));
+  el.nextWeek.addEventListener('click', ()=>changeWeek(1));
+
+  // Global action bar buttons
+  document.querySelectorAll('.btnRow button[data-set]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!selected.sessionId) return;
+      setSessionStatus(state.plan, state.activeWeek, selected.sessionId, btn.getAttribute('data-set'));
+    });
+  });
+
+  el.reset.addEventListener('click', () => {
+    if (!confirm('Reset all progress and moved sessions?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    state = initState();
+    selected = state.selected;
+    bindWeekSelect();
+    renderWeek(state.plan, state.activeWeek);
+    toast('Progress reset.');
+  });
+
+  // Self-tests
+  function assert(name, cond){ if (!cond) throw new Error(`Test failed: ${name}`); }
+  function runTests(){
+    const p = generatePlan();
+    assert('plan length 17', p.length===17);
+    const w0 = p[0];
+    assert('Saturday has long run key', w0.days[5].sessions.some(s=>s.sport==='run' && s.intensity==='key' && s.title.includes('Long Run')));
+
+    // Missed Sat long run moves to Sun if free
+    const w = generateWeek(0);
+    const plan=[w];
+    const long = w.days[5].sessions.find(s=>s.sport==='run' && s.intensity==='key');
+    long.status='missed';
+    applyMissedAdaptiveRule(plan,0,long.id);
+    assert('Long run moved to Sunday', w.days[6].sessions.some(s=>s.id===long.id));
+
+    toast('✅ Tests passed');
+  }
+  el.tests.addEventListener('click', () => {
+    try{ runTests(); }
+    catch(e){ console.error(e); alert(String(e)); toast('❌ Tests failed'); }
+  });
+
+  // Keyboard
+  window.addEventListener('keydown', (e) => {
+    if (e.key==='ArrowLeft') changeWeek(-1);
+    if (e.key==='ArrowRight') changeWeek(1);
+  });
+
+  bindWeekSelect();
+  renderWeek(state.plan, state.activeWeek);
+  saveState({plan: state.plan, activeWeek: state.activeWeek, selected});
+})();
+</script>
+
+</body>
+</html>
