@@ -78,18 +78,19 @@
     .paceGuide{
       margin-top: 12px;
       border:1px solid var(--line);
-      background: rgba(234,242,255,.55);
+      background: linear-gradient(180deg, rgba(234,242,255,.82), rgba(255,255,255,.92));
       border-radius: var(--radius);
       box-shadow: var(--shadow2);
-      padding: 12px 14px;
+      padding: 14px 16px;
       display:flex;
-      gap:10px;
+      gap:12px;
       flex-wrap:wrap;
       align-items:flex-start;
       justify-content:space-between;
+      color: var(--muted);
     }
-    .paceGuide .label{font-weight:950;font-size:12px;letter-spacing:.2px}
-    .paceGuide .txt{color:var(--muted);font-size:12px;line-height:1.5}
+    .paceGuide .label{font-weight:950;font-size:12.5px;letter-spacing:.25px;color:var(--text)}
+    .paceGuide .txt{font-size:12.5px;line-height:1.5}
     .paceGuide b{color:var(--text)}
 
     .viewToggle{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -101,10 +102,10 @@
 
     .weekMeta{
       border:1px solid var(--line);
-      background: rgba(255,255,255,.82);
+      background: rgba(255,255,255,.9);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 14px 14px;
+      padding: 16px 16px;
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
@@ -121,51 +122,46 @@
     */
     .weekGrid{
       margin-top: 14px;
-      display:grid;
-      grid-template-columns: 1fr;
+      display:flex;
+      flex-direction:column;
       gap: 14px;
-      align-items:start;
-    }
-    @media (max-width: 1150px){
-      .weekGrid{grid-template-columns: repeat(3, minmax(0, 1fr));}
-    }
-    @media (max-width: 740px){
-      .weekGrid{grid-template-columns: 1fr;}
+      align-items:stretch;
     }
 
     .dayCard{
       border:1px solid var(--line);
       border-radius: 20px;
-      background: rgba(255,255,255,.92);
+      background: rgba(255,255,255,.96);
       box-shadow: var(--shadow2);
       overflow:hidden;
-      min-height: 120px;
+      min-height: 140px;
       display:flex;
       flex-direction:row;
+      width:100%;
     }
     @media (max-width: 740px){
       .dayCard{flex-direction:column;}
     }
 
     .dayHdr{
-      padding: 12px 12px 10px;
+      padding: 14px 14px 12px;
       background: linear-gradient(180deg, rgba(234,242,255,.95), rgba(255,255,255,.78));
       border-bottom: 1px solid var(--line);
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
       gap:10px;
-      flex: 0 0 190px;
+      flex: 0 0 210px;
       border-right: 1px solid var(--line);
     }
     @media (max-width: 740px){
       .dayHdr{flex:initial;border-right:none;}
     }
-    .dayHdr .name{font-weight:950;font-size:14px}
-    .dayHdr .meta{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.25}
-    .dayHdr .mins{font-size:11px;color:var(--muted);white-space:nowrap}
+    .dayHdr .name{font-weight:950;font-size:14px;letter-spacing:.2px}
+    .dayHdr .meta{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.3}
+    .dayHdr .mins{font-size:11px;color:var(--muted);white-space:nowrap;font-weight:900}
 
-    .dayBody{padding: 12px; display:flex; flex-direction:row; gap: 12px; flex:1; align-items:flex-start}
+    .dayBody{padding: 14px; display:flex; flex-direction:row; gap: 14px; flex:1; align-items:flex-start; background: linear-gradient(90deg, rgba(238,246,255,.6), rgba(255,255,255,.9));}
     @media (max-width: 980px){
       .dayBody{flex-direction:column;}
     }
@@ -193,9 +189,10 @@
 
     .session{
       border:1px solid var(--line);
-      background: rgba(247,251,255,.95);
+      background: rgba(247,251,255,.96);
       border-radius: 16px;
       overflow:hidden;
+      transition: box-shadow .15s ease, border-color .15s ease;
     }
     .sessionTop{
       padding: 10px 10px;
@@ -246,7 +243,7 @@
     .recoveryGroup[data-open="true"] .recoveryBody{display:flex}
 
     /* Selection + statuses */
-    .session[data-selected="true"]{ box-shadow: 0 0 0 3px rgba(79,124,255,.12) inset; border-color: rgba(79,124,255,.25); }
+    .session[data-selected="true"]{ box-shadow: 0 0 0 3px rgba(79,124,255,.22) inset, 0 0 0 1px rgba(79,124,255,.45); border-color: rgba(79,124,255,.35); }
     .session[data-status="done"]{ box-shadow: 0 0 0 3px rgba(16,185,129,.10) inset; border-color: rgba(16,185,129,.25); }
     .session[data-status="missed"]{ box-shadow: 0 0 0 3px rgba(239,68,68,.08) inset; border-color: rgba(239,68,68,.22); opacity:.95; }
 
@@ -333,15 +330,12 @@
   </div>
 
   <div class="paceGuide" aria-label="Pace guide">
-    <div>
-      <div class="label">Pace guide (adjust by feel &amp; heat)</div>
-      <div class="txt">
-        Easy: <b>5:45–6:30/km</b> • Long: <b>5:30–6:10/km</b><br/>
-        Marathon pace (MP): <b>4:55–5:05/km</b><br/>
-        Threshold/Tempo: <b>4:30–4:40/km</b> • Intervals: <b>4:05–4:20/km</b>
-      </div>
+    <div class="label">Pace guide (adjust by feel &amp; heat):</div>
+    <div class="txt">
+      Easy: <b>5:45–6:30/km</b> • Long: <b>5:30–6:10/km</b><br/>
+      Marathon pace (MP): <b>4:55–5:05/km</b><br/>
+      Threshold/Tempo: <b>4:30–4:40/km</b> • Intervals: <b>4:05–4:20/km</b>
     </div>
-    <div class="txt">Tip: Keep easy days easy. If you miss a key run, mark it missed — the plan adapts.</div>
   </div>
 
   <div class="weekGrid" id="weekGrid" aria-live="polite"></div>
@@ -678,12 +672,15 @@
       dayEl.className = 'dayCard';
 
       const nonMissedRunMin = d.sessions.filter(s=>s.sport==='run' && s.status!=='missed').reduce((a,b)=>a+b.minutes,0);
+      const nonMissedTotal = d.sessions.filter(s=>s.status!=='missed').reduce((a,b)=>a+b.minutes,0);
+      const sessionCount = d.sessions.length;
 
       dayEl.innerHTML = `
         <div class="dayHdr">
           <div>
             <div class="name">${DAY_NAMES[d.dayIndex]}</div>
             <div class="meta">${nonMissedRunMin ? `${minToText(nonMissedRunMin)} run` : '—'}</div>
+            <div class="meta">${nonMissedTotal ? `${minToText(nonMissedTotal)} all • ${sessionCount} session${sessionCount!==1?'s':''}` : `${sessionCount} session${sessionCount!==1?'s':''}`}</div>
           </div>
           <div class="mins">${d.dayIndex===5?'Long run':''}</div>
         </div>
@@ -713,7 +710,7 @@
         group.className = 'recoveryGroup';
         group.setAttribute('data-open','false');
         group.innerHTML = `
-          <div class="recoveryHdr" role="button" aria-expanded="false">
+          <div class="recoveryHdr" role="button" aria-expanded="false" tabindex="0">
             <span>Recovery / Optional</span>
             <span class="recoveryCount">${recovery.length}</span>
           </div>
@@ -721,10 +718,14 @@
         `;
         const hdr = group.querySelector('.recoveryHdr');
         const b = group.querySelector('.recoveryBody');
-        hdr.addEventListener('click', () => {
+        const toggleRecovery = () => {
           const open = group.getAttribute('data-open')==='true';
           group.setAttribute('data-open', String(!open));
           hdr.setAttribute('aria-expanded', String(!open));
+        };
+        hdr.addEventListener('click', toggleRecovery);
+        hdr.addEventListener('keydown', (e) => {
+          if (e.key==='Enter' || e.key===' '){ e.preventDefault(); toggleRecovery(); }
         });
         for (const s of recovery) b.appendChild(renderSessionCard(s, weekIndex));
         colRecovery.appendChild(group);
@@ -764,7 +765,7 @@
     const key = isKeyRun(session) ? 'Key' : (session.sport==='run' ? 'Easy' : 'Recovery');
 
     sEl.innerHTML = `
-      <div class="sessionTop" role="button" aria-expanded="${UI.detailed}">
+      <div class="sessionTop" role="button" aria-expanded="${UI.detailed}" tabindex="0">
         <div style="min-width:0">
           <div class="sessionTitle">${escapeHtml(session.title)}</div>
           <div class="sessionSub">${escapeHtml(key)} • ${escapeHtml(sportBadge(session))}</div>
@@ -777,15 +778,27 @@
     const top = sEl.querySelector('.sessionTop');
 
     // Tap header: toggle details + select
+    const toggleOpen = () => {
+      const open = sEl.getAttribute('data-open')==='true';
+      sEl.setAttribute('data-open', String(!open));
+      top.setAttribute('aria-expanded', String(!open));
+    };
+
     top.addEventListener('click', (e) => {
       e.stopPropagation();
       clearSelectionUI();
       sEl.setAttribute('data-selected','true');
       setSelected(weekIndex, session);
-
-      const open = sEl.getAttribute('data-open')==='true';
-      sEl.setAttribute('data-open', String(!open));
-      top.setAttribute('aria-expanded', String(!open));
+      toggleOpen();
+    });
+    top.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        clearSelectionUI();
+        sEl.setAttribute('data-selected','true');
+        setSelected(weekIndex, session);
+        toggleOpen();
+      }
     });
 
     // Tap card background: select (no toggle)
@@ -886,13 +899,26 @@
     const w0 = p[0];
     assert('Saturday has long run key', w0.days[5].sessions.some(s=>s.sport==='run' && s.intensity==='key' && s.title.includes('Long Run')));
 
+    // Saturday contains a long run session explicitly
+    const sat = w0.days[5];
+    assert('Saturday includes a long run item', sat.sessions.some(s=>s.title.includes('Long Run')));
+
     // Missed Sat long run moves to Sun if free
     const w = generateWeek(0);
     const plan=[w];
     const long = w.days[5].sessions.find(s=>s.sport==='run' && s.intensity==='key');
     long.status='missed';
+    assert('Sunday initially has no key run', !dayHasKeyRun(w.days[6]));
     applyMissedAdaptiveRule(plan,0,long.id);
     assert('Long run moved to Sunday', w.days[6].sessions.some(s=>s.id===long.id));
+
+    // Compact mode collapses details by default
+    const prevMode = UI.detailed;
+    setMode(false);
+    const card = renderSessionCard({ id:'t', sport:'run', title:'Test Session', minutes:30, intensity:'easy', optional:false, details:'Details', status:'planned', moved:false }, 0);
+    assert('Compact renders data-open false', card.getAttribute('data-open')==='false');
+    assert('Compact aria-expanded false', card.querySelector('.sessionTop').getAttribute('aria-expanded')==='false');
+    setMode(prevMode);
 
     toast('✅ Tests passed');
   }
