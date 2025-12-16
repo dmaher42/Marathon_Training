@@ -25,12 +25,11 @@
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      background:
-        radial-gradient(900px 600px at 15% 0%, rgba(79,124,255,.18), transparent 60%),
-        radial-gradient(900px 600px at 95% 10%, rgba(147,197,253,.22), transparent 62%),
-        linear-gradient(180deg, var(--bg1), var(--bg2));
-      color:var(--text);
+      background: var(--bg-page);
+      color: var(--text-primary);
     }
+
+    .muted{color: var(--text-secondary);}
 
     header{
       position:sticky; top:0; z-index:50;
@@ -188,8 +187,8 @@
     }
 
     .session{
-      border:1px solid var(--line);
-      background: rgba(247,251,255,.96);
+      border:1px solid var(--border-default);
+      background: var(--bg-session);
       border-radius: 16px;
       overflow:hidden;
       transition: box-shadow .15s ease, border-color .15s ease;
@@ -292,6 +291,70 @@
       z-index: 999;
     }
     .toast.show{display:block}
+
+    /* =========================
+       Soft Pastel Contrast Theme
+       ========================= */
+    :root{
+      --bg-page: #F3F4F6;
+      --bg-card: #FFFFFF;
+      --bg-session: #F9FAFB;
+      --text-primary: #111827;
+      --text-secondary: #4B5563;
+      --border-default: #D1D5DB;
+      --session-high: #1F3A93;
+      --tag-optional: #2D7A62;
+      --support-bg: #EBF6EB;
+      --support-border: #B8D8B8;
+
+      /* Map legacy tokens to theme palette */
+      --bg1: var(--bg-page);
+      --bg2: var(--bg-page);
+      --card: var(--bg-card);
+      --card2: var(--bg-card);
+      --text: var(--text-primary);
+      --muted: var(--text-secondary);
+      --line: var(--border-default);
+    }
+
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: var(--bg-page);
+      color: var(--text-primary);
+    }
+
+    .card, .day{
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+    }
+
+    .session{
+      background: var(--bg-session);
+      border: 1px solid var(--border-default);
+    }
+
+    .tag{
+      border-color: var(--border-default);
+      color: var(--text-secondary);
+    }
+    .tag.high{
+      color: var(--session-high);
+      border-color: var(--session-high);
+    }
+    .tag.opt{
+      color: var(--tag-optional);
+      border-color: var(--tag-optional);
+    }
+
+    details.support{
+      background: var(--support-bg);
+      border: 1px dashed var(--support-border);
+      border-radius: 10px;
+      padding: 8px;
+      margin-top: 8px;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
