@@ -73,7 +73,31 @@
     button:hover{filter:brightness(1.02)}
     button:active{transform:translateY(1px)}
 
-    main{max-width: 1220px; margin:0 auto; padding: 16px 16px 80px}
+    main{max-width: 1220px; margin:0 auto; padding: 16px 16px 96px}
+
+    .paceGuide{
+      margin-top: 12px;
+      border:1px solid var(--line);
+      background: rgba(234,242,255,.55);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow2);
+      padding: 12px 14px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:flex-start;
+      justify-content:space-between;
+    }
+    .paceGuide .label{font-weight:950;font-size:12px;letter-spacing:.2px}
+    .paceGuide .txt{color:var(--muted);font-size:12px;line-height:1.5}
+    .paceGuide b{color:var(--text)}
+
+    .viewToggle{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .viewToggle button{box-shadow:none}
+    .viewToggle button[data-active="true"]{
+      border-color: rgba(79,124,255,.35);
+      background: rgba(79,124,255,.10);
+    }
 
     .weekMeta{
       border:1px solid var(--line);
@@ -92,15 +116,13 @@
     .weekPhase{color:var(--muted);font-size:12px;line-height:1.4}
     .totals{color:var(--muted);font-size:12px;line-height:1.4}
 
-    /* WEEK VIEW: whole week per page.
-       - Desktop: 7-column grid.
-       - Tablet: 3 columns.
-       - Mobile: 1 column (still whole week on page).
+    /* WEEK VIEW: whole week per page, improved UX.
+       We render the week as 7 large ROWS (days), so each day has more room.
     */
     .weekGrid{
       margin-top: 14px;
       display:grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-template-columns: 1fr;
       gap: 14px;
       align-items:start;
     }
@@ -114,25 +136,40 @@
     .dayCard{
       border:1px solid var(--line);
       border-radius: 20px;
-      background: rgba(255,255,255,.88);
+      background: rgba(255,255,255,.92);
       box-shadow: var(--shadow2);
       overflow:hidden;
       min-height: 120px;
+      display:flex;
+      flex-direction:row;
     }
+    @media (max-width: 740px){
+      .dayCard{flex-direction:column;}
+    }
+
     .dayHdr{
       padding: 12px 12px 10px;
-      background: linear-gradient(180deg, rgba(234,242,255,.95), rgba(255,255,255,.70));
+      background: linear-gradient(180deg, rgba(234,242,255,.95), rgba(255,255,255,.78));
       border-bottom: 1px solid var(--line);
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
       gap:10px;
+      flex: 0 0 190px;
+      border-right: 1px solid var(--line);
     }
-    .dayHdr .name{font-weight:950;font-size:13px}
-    .dayHdr .meta{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.25}
+    @media (max-width: 740px){
+      .dayHdr{flex:initial;border-right:none;}
+    }
+    .dayHdr .name{font-weight:950;font-size:14px}
+    .dayHdr .meta{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.25}
     .dayHdr .mins{font-size:11px;color:var(--muted);white-space:nowrap}
 
-    .dayBody{padding: 12px; display:flex; flex-direction:column; gap: 10px}
+    .dayBody{padding: 12px; display:flex; flex-direction:row; gap: 12px; flex:1; align-items:flex-start}
+    @media (max-width: 980px){
+      .dayBody{flex-direction:column;}
+    }
+
 
     .sectionLabel{
       font-size:11px;
@@ -144,6 +181,14 @@
       align-items:center;
       justify-content:space-between;
       gap:8px;
+      margin-bottom: 6px;
+    }
+
+    .col{display:flex;flex-direction:column;gap:10px;min-width:0}
+    .col.primary{flex: 1 1 58%;}
+    .col.recovery{flex: 1 1 42%;}
+    @media (max-width: 980px){
+      .col.primary,.col.recovery{flex:initial;}
     }
 
     .session{
@@ -281,6 +326,22 @@
       <div class="weekPhase" id="weekPhase">Phase</div>
     </div>
     <div class="totals" id="weekTotals">Totals</div>
+    <div class="viewToggle" aria-label="View mode">
+      <button id="btnCompact" data-active="false" title="Hide details by default">Compact</button>
+      <button id="btnDetailed" data-active="true" title="Show details by default">Detailed</button>
+    </div>
+  </div>
+
+  <div class="paceGuide" aria-label="Pace guide">
+    <div>
+      <div class="label">Pace guide (adjust by feel &amp; heat)</div>
+      <div class="txt">
+        Easy: <b>5:45–6:30/km</b> • Long: <b>5:30–6:10/km</b><br/>
+        Marathon pace (MP): <b>4:55–5:05/km</b><br/>
+        Threshold/Tempo: <b>4:30–4:40/km</b> • Intervals: <b>4:05–4:20/km</b>
+      </div>
+    </div>
+    <div class="txt">Tip: Keep easy days easy. If you miss a key run, mark it missed — the plan adapts.</div>
   </div>
 
   <div class="weekGrid" id="weekGrid" aria-live="polite"></div>
@@ -545,8 +606,19 @@
     weekGrid: document.getElementById('weekGrid'),
     toast: document.getElementById('toast'),
     selTitle: document.getElementById('selTitle'),
-    selSub: document.getElementById('selSub')
+    selSub: document.getElementById('selSub'),
+    btnCompact: document.getElementById('btnCompact'),
+    btnDetailed: document.getElementById('btnDetailed')
   };
+
+  // UI mode: compact = details collapsed by default, detailed = expanded by default
+  const UI = { detailed: true };
+  function setMode(detailed){
+    UI.detailed = detailed;
+    if (el.btnCompact) el.btnCompact.setAttribute('data-active', String(!detailed));
+    if (el.btnDetailed) el.btnDetailed.setAttribute('data-active', String(!!detailed));
+  }
+
 
   function toast(msg){
     el.toast.textContent = msg;
@@ -628,13 +700,14 @@
 
       const recovery = d.sessions.filter(s => s.id !== primary.id);
 
-      const primaryWrap = document.createElement('div');
-      primaryWrap.innerHTML = `
-        <div class="sectionLabel"><span>Primary</span><span>Tap to expand</span></div>
-      `;
-      primaryWrap.appendChild(renderSessionCard(primary, weekIndex));
-      body.appendChild(primaryWrap);
+      const colPrimary = document.createElement('div');
+      colPrimary.className = 'col primary';
+      colPrimary.innerHTML = `<div class="sectionLabel"><span>Primary</span><span>Tap to expand</span></div>`;
+      colPrimary.appendChild(renderSessionCard(primary, weekIndex));
+      body.appendChild(colPrimary);
 
+      const colRecovery = document.createElement('div');
+      colRecovery.className = 'col recovery';
       if (recovery.length){
         const group = document.createElement('div');
         group.className = 'recoveryGroup';
@@ -654,8 +727,11 @@
           hdr.setAttribute('aria-expanded', String(!open));
         });
         for (const s of recovery) b.appendChild(renderSessionCard(s, weekIndex));
-        body.appendChild(group);
+        colRecovery.appendChild(group);
+      } else {
+        colRecovery.innerHTML = `<div class="sectionLabel"><span>Recovery</span><span>None</span></div>`;
       }
+      body.appendChild(colRecovery);
 
       el.weekGrid.appendChild(dayEl);
     }
@@ -681,14 +757,14 @@
     const sEl = document.createElement('div');
     sEl.className = 'session';
     sEl.setAttribute('data-sid', session.id);
-    sEl.setAttribute('data-open','false');
+    sEl.setAttribute('data-open', String(UI.detailed));
     sEl.setAttribute('data-selected','false');
     sEl.setAttribute('data-status', session.status);
 
     const key = isKeyRun(session) ? 'Key' : (session.sport==='run' ? 'Easy' : 'Recovery');
 
     sEl.innerHTML = `
-      <div class="sessionTop" role="button" aria-expanded="false">
+      <div class="sessionTop" role="button" aria-expanded="${UI.detailed}">
         <div style="min-width:0">
           <div class="sessionTitle">${escapeHtml(session.title)}</div>
           <div class="sessionSub">${escapeHtml(key)} • ${escapeHtml(sportBadge(session))}</div>
@@ -830,6 +906,13 @@
     if (e.key==='ArrowLeft') changeWeek(-1);
     if (e.key==='ArrowRight') changeWeek(1);
   });
+
+  // View mode buttons
+  if (el.btnCompact && el.btnDetailed){
+    el.btnCompact.addEventListener('click', ()=>{ setMode(false); renderWeek(state.plan, state.activeWeek); });
+    el.btnDetailed.addEventListener('click', ()=>{ setMode(true); renderWeek(state.plan, state.activeWeek); });
+    setMode(true);
+  }
 
   bindWeekSelect();
   renderWeek(state.plan, state.activeWeek);
