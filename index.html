@@ -383,6 +383,30 @@
       --accent: #8b5cf6;
       --accent-2: #a78bfa;
     }
+
+    html[data-theme="turf-triumph"] {
+      --bg-page: #f4fbf6;
+      --bg-panel: #ffffff;
+      --bg-muted: #eaf5ea;
+      --text-strong: #1b3a1b;
+      --text-muted: #4e6b4e;
+      --line: #cde6cd;
+      --accent: #4CAF50;
+      --accent-2: #8BC34A;
+      --done: #4CAF50;
+    }
+
+    html[data-theme="turf-triumph"] .card summary:focus-visible,
+    html[data-theme="turf-triumph"] button:focus-visible,
+    html[data-theme="turf-triumph"] select:focus-visible,
+    html[data-theme="turf-triumph"] input:focus-visible {
+      outline-color: #FFC107;
+    }
+
+    html[data-theme="turf-triumph"] .session[data-selected="true"] {
+      box-shadow: 0 0 0 3px rgba(255, 235, 59, 0.4);
+      border-color: #FFC107;
+    }
   </style>
   <script>
     try {
@@ -511,6 +535,7 @@
             <select id="themeSelect" aria-label="Select theme">
               <option value="default">Default</option>
               <option value="purple-pastel">Pastel Purple</option>
+              <option value="turf-triumph">Turf Triumph</option>
             </select>
             <small>Choose your color palette.</small>
           </div>
@@ -700,7 +725,7 @@
     const paceSource = ["goal", "recent", "trial"].includes(base.paceSource) ? base.paceSource : DEFAULT_SETTINGS.paceSource;
     const adjustment = Number.isFinite(Number(base.adjustment)) ? clamp(Number(base.adjustment), -20, 30) : DEFAULT_SETTINGS.adjustment;
     const unit = base.unit === "mi" ? "mi" : "km";
-    const theme = base.theme === "purple-pastel" ? "purple-pastel" : "default";
+    const theme = ["purple-pastel", "turf-triumph"].includes(base.theme) ? base.theme : "default";
     const trialDistance = String(base.trialDistance || DEFAULT_SETTINGS.trialDistance);
     const trialTime = normalizeTimeString(base.trialTime, DEFAULT_SETTINGS.trialTime);
     const maxHr = base.maxHr === null || base.maxHr === undefined ? "" : String(base.maxHr).trim();
