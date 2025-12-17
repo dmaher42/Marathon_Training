@@ -372,7 +372,26 @@
       z-index: 99;
     }
     .toast.show { display: block; }
+
+    html[data-theme="purple-pastel"] {
+      --bg-page: #fdfbff;
+      --bg-panel: #ffffff;
+      --bg-muted: #f3f0ff;
+      --text-strong: #1e1b4b;
+      --text-muted: #64748b;
+      --line: #e9d5ff;
+      --accent: #8b5cf6;
+      --accent-2: #a78bfa;
+    }
   </style>
+  <script>
+    try {
+      const settings = JSON.parse(localStorage.getItem("marathonPlan_personalization_v1"));
+      if (settings && settings.theme) {
+        document.documentElement.setAttribute("data-theme", settings.theme);
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body>
 <header>
@@ -488,6 +507,14 @@
             <small>Positive = slower paces (hot/hilly/tired). Negative = faster (cool/flat/strong).</small>
           </div>
           <div class="form-group">
+            <label for="themeSelect">Theme</label>
+            <select id="themeSelect" aria-label="Select theme">
+              <option value="default">Default</option>
+              <option value="purple-pastel">Pastel Purple</option>
+            </select>
+            <small>Choose your color palette.</small>
+          </div>
+          <div class="form-group">
             <label>Units</label>
             <div class="unit-toggle" role="group" aria-label="Toggle units">
               <button type="button" id="unitKm" data-unit="km" data-active="true">km</button>
@@ -567,6 +594,7 @@
     trialTime: "0:25:00",
     adjustment: 0,
     unit: "km",
+    theme: "default",
     maxHr: "",
     easyHr: "",
     crossTraining: {
@@ -672,6 +700,7 @@
     const paceSource = ["goal", "recent", "trial"].includes(base.paceSource) ? base.paceSource : DEFAULT_SETTINGS.paceSource;
     const adjustment = Number.isFinite(Number(base.adjustment)) ? clamp(Number(base.adjustment), -20, 30) : DEFAULT_SETTINGS.adjustment;
     const unit = base.unit === "mi" ? "mi" : "km";
+    const theme = base.theme === "purple-pastel" ? "purple-pastel" : "default";
     const trialDistance = String(base.trialDistance || DEFAULT_SETTINGS.trialDistance);
     const trialTime = normalizeTimeString(base.trialTime, DEFAULT_SETTINGS.trialTime);
     const maxHr = base.maxHr === null || base.maxHr === undefined ? "" : String(base.maxHr).trim();
@@ -687,6 +716,7 @@
       trialTime,
       adjustment,
       unit,
+      theme,
       maxHr,
       easyHr,
       crossTraining: cross,
@@ -1133,6 +1163,7 @@
     adjustmentValue: document.getElementById("adjustmentValue"),
     unitKm: document.getElementById("unitKm"),
     unitMi: document.getElementById("unitMi"),
+    themeSelect: document.getElementById("themeSelect"),
     maxHr: document.getElementById("maxHr"),
     easyHr: document.getElementById("easyHr"),
     weekStatusPill: document.getElementById("weekStatusPill"),
@@ -1256,6 +1287,7 @@
     el.trialDistance.value = settings.trialDistance;
     el.trialTime.value = settings.trialTime;
     el.adjustment.value = settings.adjustment;
+    el.themeSelect.value = settings.theme;
     el.maxHr.value = settings.maxHr;
     el.easyHr.value = settings.easyHr;
     updateUnitButtons(settings.unit);
@@ -1270,6 +1302,9 @@
     PACE = applyAdjustment(BASE_ZONES, currentSettings.adjustment);
     currentUnit = currentSettings.unit;
     currentSignature = settingsSignature(currentSettings, CONFIG);
+    if (currentSettings.theme) {
+      document.documentElement.setAttribute("data-theme", currentSettings.theme);
+    }
     if (opts.updateUI) {
       syncForm(currentSettings);
       renderPaceGuide();
@@ -1312,6 +1347,7 @@
       trialTime: trialVal,
       adjustment: Number(el.adjustment.value) || 0,
       unit: currentUnit,
+      theme: el.themeSelect.value,
       maxHr: el.maxHr.value,
       easyHr: el.easyHr.value,
       crossTraining: {
@@ -1660,6 +1696,13 @@
     el.trialTime.addEventListener("change", () => refreshPaces({ trialTime: el.trialTime.value || currentSettings.trialTime }));
     el.adjustment.addEventListener("input", () => updateAdjustmentLabel(el.adjustment.value));
     el.adjustment.addEventListener("change", () => refreshPaces({ adjustment: Number(el.adjustment.value) || 0 }));
+    el.themeSelect.addEventListener("change", () => {
+      const theme = el.themeSelect.value;
+      currentSettings.theme = theme;
+      document.documentElement.setAttribute("data-theme", theme);
+      savePersonalizationSettings(currentSettings);
+      toast("Theme updated");
+    });
     el.unitKm.addEventListener("click", () => { if (currentSettings.unit !== "km") refreshPaces({ unit: "km" }); });
     el.unitMi.addEventListener("click", () => { if (currentSettings.unit !== "mi") refreshPaces({ unit: "mi" }); });
     [el.maxHr, el.easyHr].forEach((node) => node.addEventListener("change", () => refreshPaces({ maxHr: el.maxHr.value, easyHr: el.easyHr.value })));
