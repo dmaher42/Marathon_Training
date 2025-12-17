@@ -140,8 +140,8 @@
     .form-actions button { padding-inline: 18px; }
 
     .pace-guide {
-      margin-top: var(--space-3);
-      padding: var(--space-3);
+      margin-top: var(--space-2);
+      padding: var(--space-2) var(--space-3) var(--space-3);
       border: 1px solid var(--line);
       border-radius: var(--radius-lg);
       background: linear-gradient(180deg, rgba(234, 242, 255, 0.8), #fff);
@@ -152,8 +152,25 @@
       color: var(--text-muted);
       font-size: var(--text-sm);
     }
-    .pace-guide .title { font-weight: 900; color: var(--text-strong); letter-spacing: 0.2px; }
+    .pace-guide .title { font-weight: 900; color: var(--text-strong); letter-spacing: 0.2px; display: flex; align-items: center; gap: var(--space-2); }
     .pace-guide .note { color: var(--text-muted); font-size: var(--text-sm); }
+    .pace-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      padding: var(--space-2);
+      border-radius: var(--radius-md);
+      border: 1px dashed rgba(95, 141, 245, 0.35);
+      background: #fff;
+      cursor: pointer;
+    }
+    .pace-toggle .label { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+    .pace-toggle .label b { font-size: var(--text-md); }
+    .pace-toggle .label span { color: var(--text-muted); font-size: var(--text-sm); }
+    .pace-toggle .chevron { transition: transform 0.15s ease; }
+    .pace-toggle[data-open="true"] .chevron { transform: rotate(180deg); }
     .settings-toggle {
       border: 1px solid var(--line);
       background: #fff;
@@ -191,13 +208,36 @@
       gap: var(--space-3);
       flex-wrap: wrap;
     }
-    .week-title { font-size: var(--text-lg); font-weight: 900; }
+    .week-title { font-size: var(--text-lg); font-weight: 900; display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
     .week-phase, .week-totals { font-size: var(--text-sm); color: var(--text-muted); }
     .view-toggle { display: flex; gap: var(--space-2); flex-wrap: wrap; }
     .view-toggle button { box-shadow: none; padding: 8px 12px; }
     .view-toggle button[data-active="true"] { background: rgba(95, 141, 245, 0.12); border-color: rgba(95, 141, 245, 0.45); }
 
+    .status-pill { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: var(--text-sm); display: inline-flex; align-items: center; gap: 8px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .status-green { background: #34d399; border: 1px solid #059669; }
+    .status-yellow { background: #fbbf24; border: 1px solid #d97706; }
+    .status-red { background: #fca5a5; border: 1px solid #ef4444; }
+    .status-gray { background: #e2e8f0; border: 1px solid #cbd5e1; }
+
+    .mobile-view-toggle { display: none; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+    .mobile-view-toggle button { box-shadow: none; padding: 6px 10px; font-weight: 700; }
+    .mobile-view-toggle button[data-active="true"] { background: rgba(95, 141, 245, 0.12); border-color: rgba(95, 141, 245, 0.45); }
+
     .week-grid { margin-top: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); }
+
+    .week-summary { margin-top: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); overflow: hidden; }
+    .week-summary-header, .week-summary-totals { padding: var(--space-2) var(--space-3); background: var(--bg-muted); font-weight: 800; display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
+    .week-summary-list { display: flex; flex-direction: column; }
+    .week-summary-row { display: grid; grid-template-columns: 1.1fr 1fr 0.9fr auto; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-top: 1px solid var(--line); align-items: center; cursor: pointer; }
+    .week-summary-row:hover { background: rgba(95, 141, 245, 0.06); }
+    .week-summary-row .day { font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .week-summary-row .label { color: var(--text-muted); font-size: var(--text-sm); }
+    .week-summary-row .minutes { font-weight: 700; }
+    .week-summary-row .status-chip { padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); font-size: var(--text-sm); text-transform: capitalize; }
+    .summary-long { color: var(--accent); font-weight: 900; }
+    @media (max-width: 740px) { .mobile-view-toggle { display: flex; } .week-summary-row { grid-template-columns: 1fr 0.9fr auto; } .week-summary-row .label { display: none; } }
 
     .day-card {
       display: flex;
@@ -429,17 +469,18 @@
     </form>
   </div>
 
-  <div class="pace-guide" id="paceGuide" aria-label="Pace guide">
-    <div class="title">Pace guide</div>
-    <div class="note">Enter your info to refresh zones.</div>
-  </div>
+  <div class="pace-guide" id="paceGuide" aria-label="Pace guide"></div>
 
   <div class="week-meta" id="weekMeta">
     <div>
-      <div class="week-title" id="weekTitle">Week</div>
+      <div class="week-title" id="weekTitle"><span id="weekLabel">Week</span> <span id="weekStatusPill" class="status-pill"><span class="status-dot status-gray"></span><span id="weekStatusText">Future</span></span></div>
       <div class="week-phase" id="weekPhase">Phase</div>
     </div>
     <div class="week-totals" id="weekTotals">Totals</div>
+    <div class="mobile-view-toggle" id="mobileViewToggle" aria-label="Condensed view">
+      <button type="button" id="btnSummary" data-active="false">Summary</button>
+      <button type="button" id="btnWeekDetailed" data-active="true">Detailed</button>
+    </div>
     <div class="view-toggle" aria-label="View mode">
       <button id="btnCompact" data-active="false" title="Hide details by default">Compact</button>
       <button id="btnDetailed" data-active="true" title="Show details by default">Detailed</button>
@@ -494,6 +535,7 @@
   const XTRAIN_TEMPLATES = { bike: [30, 25], swim: [25, 20, 20], strength: [25, 20] };
   const STORAGE_KEY = "marathonPlan17w_weekview_v3";
   const SETTINGS_KEY = "marathonPlan_personalization_v1";
+  const UI_STATE_KEY = "marathonPlan_ui_v1";
   const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const LONG_DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -515,6 +557,22 @@
   function uid(prefix) { return `${prefix}_${Math.random().toString(36).slice(2, 9)}`; }
   function minToText(min) { const h = Math.floor(min / 60); const m = min % 60; return h ? `${h}h ${m}m` : `${m}m`; }
   function escapeHtml(str) { return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;"); }
+
+  // =============================
+  // UI State (collapsed guides, view modes)
+  // =============================
+  const DEFAULT_UI_STATE = { detailed: true, paceCollapsed: true, summaryMobile: true };
+  function isMobile() { return window.matchMedia("(max-width: 740px)").matches; }
+  function loadUIState() {
+    try {
+      const raw = localStorage.getItem(UI_STATE_KEY);
+      if (!raw) return { ...DEFAULT_UI_STATE };
+      return { ...DEFAULT_UI_STATE, ...JSON.parse(raw) };
+    } catch {
+      return { ...DEFAULT_UI_STATE };
+    }
+  }
+  function saveUIState(next) { try { localStorage.setItem(UI_STATE_KEY, JSON.stringify(next)); } catch {} }
 
   function parseTimeInput(value) {
     if (!value && value !== 0) return null;
@@ -929,6 +987,7 @@
     btnDetailed: document.getElementById("btnDetailed"),
     subtitle: document.getElementById("subtitle"),
     paceGuide: document.getElementById("paceGuide"),
+    weekLabel: document.getElementById("weekLabel"),
     personalizationForm: document.getElementById("personalizationForm"),
     raceDate: document.getElementById("raceDate"),
     planLength: document.getElementById("planLength"),
@@ -950,13 +1009,19 @@
     unitMi: document.getElementById("unitMi"),
     maxHr: document.getElementById("maxHr"),
     easyHr: document.getElementById("easyHr"),
+    weekStatusPill: document.getElementById("weekStatusPill"),
+    weekStatusText: document.getElementById("weekStatusText"),
+    mobileViewToggle: document.getElementById("mobileViewToggle"),
+    btnSummary: document.getElementById("btnSummary"),
+    btnWeekDetailed: document.getElementById("btnWeekDetailed"),
   };
 
-  const UI = { detailed: true };
+  const UI = loadUIState();
   function setMode(detailed) {
     UI.detailed = detailed;
     if (el.btnCompact) el.btnCompact.setAttribute("data-active", String(!detailed));
     if (el.btnDetailed) el.btnDetailed.setAttribute("data-active", String(!!detailed));
+    saveUIState(UI);
   }
 
   function toast(msg) {
@@ -990,14 +1055,16 @@
     return template.replace(/\{(EASY|LONG|MP|TEMPO|INTERVALS)\}/g, (_, key) => replacements[key] || "");
   }
 
-  function renderPaceGuide() {
+  function renderPaceGuide(collapsed = UI.paceCollapsed) {
     if (!el.paceGuide) return;
+    UI.paceCollapsed = collapsed;
+    saveUIState(UI);
     const adj = Number(currentSettings.adjustment) || 0;
     const baseMp = BASE_ZONES?.mp?.[0] || 0;
     const pct = baseMp ? Math.round((adj / baseMp) * 1000) / 10 : 0;
     const adjLabel = `${adj >= 0 ? "+" : ""}${adj} sec/km ${pct ? `(~${pct}% )` : ""}`;
     const hrNote = currentSettings.easyHr || currentSettings.maxHr ? `<div class="note">Use HR cap for easy/long: ${currentSettings.easyHr || ""}${currentSettings.easyHr && currentSettings.maxHr ? " bpm of " : ""}${currentSettings.maxHr ? `${currentSettings.maxHr} max` : ""}</div>` : "";
-    el.paceGuide.innerHTML = `
+    const guideBody = `
       <div class="title">Pace guide (${currentUnit})</div>
       <div class="note">Adjustment: ${adjLabel}</div>
       <div>Easy: <b>${paceRangeLabel("easy")}</b> • Long: <b>${paceRangeLabel("long")}</b></div>
@@ -1005,6 +1072,24 @@
       <div>Threshold/Tempo: <b>${paceRangeLabel("tempo")}</b> • Intervals: <b>${paceRangeLabel("intervals")}</b></div>
       ${hrNote}
     `;
+    const detailsId = "paceGuideDetails";
+    el.paceGuide.innerHTML = `
+      <button class="pace-toggle" id="paceToggle" aria-expanded="${!collapsed}" aria-controls="${detailsId}" data-open="${!collapsed}">
+        <span class="label"><b>Pace guide</b><span>Easy / Long / MP / Tempo / Intervals</span></span>
+        <span class="chevron">⌄</span>
+      </button>
+      <div id="${detailsId}" style="display:${collapsed ? "none" : "block"};">${guideBody}</div>
+    `;
+    const toggle = document.getElementById("paceToggle");
+    const details = document.getElementById(detailsId);
+    if (toggle && details) {
+      const toggleOpen = () => {
+        const next = details.style.display === "none";
+        renderPaceGuide(!next);
+      };
+      toggle.addEventListener("click", toggleOpen);
+      toggle.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleOpen(); } });
+    }
   }
 
   function updateAdjustmentLabel(val = currentSettings.adjustment) {
@@ -1151,6 +1236,81 @@
     return { run, bike, swim, str, total: run + bike + swim + str };
   }
 
+  // =============================
+  // Week Status Computation
+  // =============================
+  function getWeekStatus(week, today = new Date()) {
+    const t = new Date(today);
+    t.setHours(0, 0, 0, 0);
+    const todayIdx = (t.getDay() + 6) % 7;
+    if (week.weekIndex > 0) return "future";
+    const sessionsUpToToday = [];
+    for (const d of week.days) {
+      if (week.weekIndex === 0 && d.dayIndex > todayIdx) continue;
+      sessionsUpToToday.push(...d.sessions);
+    }
+    if (!sessionsUpToToday.length) return "future";
+    const missed = sessionsUpToToday.some((s) => s.status === "missed");
+    const planned = sessionsUpToToday.filter((s) => s.status === "planned");
+    const done = sessionsUpToToday.filter((s) => s.status === "done");
+    if (missed) return "missed";
+    if (!planned.length) return "completed";
+    if (done.length) return "partial";
+    return "partial";
+  }
+  const WEEK_STATUS_META = {
+    completed: { text: "On track", dotClass: "status-green", tooltip: "All sessions through today are done" },
+    partial: { text: "Partial", dotClass: "status-yellow", tooltip: "Some sessions done, some remaining" },
+    missed: { text: "Missed", dotClass: "status-red", tooltip: "One or more sessions missed" },
+    future: { text: "Upcoming", dotClass: "status-gray", tooltip: "Week is in the future" },
+  };
+  function statusIcon(status) { return status === "completed" ? "🟢" : status === "partial" ? "🟡" : status === "missed" ? "🔴" : "⚪"; }
+  function applyWeekStatusUI(status) {
+    const meta = WEEK_STATUS_META[status] || WEEK_STATUS_META.future;
+    if (el.weekStatusText) el.weekStatusText.textContent = meta.text;
+    if (el.weekStatusPill) {
+      el.weekStatusPill.title = meta.tooltip;
+      el.weekStatusPill.querySelectorAll(".status-dot").forEach((n) => {
+        n.className = `status-dot ${meta.dotClass}`;
+      });
+    }
+  }
+
+  // =============================
+  // Mobile Summary Rendering
+  // =============================
+  function summarizeStatus(day) {
+    if (day.sessions.some((s) => s.status === "missed")) return "missed";
+    if (day.sessions.some((s) => s.status === "done")) return "done";
+    return "planned";
+  }
+  function renderWeekSummary(week) {
+    const container = document.createElement("div");
+    container.className = "week-summary";
+    const totals = computeWeekTotals(week);
+    container.innerHTML = `
+      <div class="week-summary-header">Week at a glance <span class="muted">Tap a day to drill in</span></div>
+      <div class="week-summary-list"></div>
+      <div class="week-summary-totals">Totals: Run ${minToText(totals.run)} • Bike ${minToText(totals.bike)} • Swim ${minToText(totals.swim)} • Strength ${minToText(totals.str)} • All ${minToText(totals.total)}</div>
+    `;
+    const list = container.querySelector(".week-summary-list");
+    week.days.forEach((d) => {
+      const keySession = d.sessions.find((s) => isKeyRun(s)) || d.sessions.find((s) => s.sport === "run") || d.sessions[0];
+      const status = summarizeStatus(d);
+      const row = document.createElement("div");
+      row.className = "week-summary-row";
+      row.innerHTML = `
+        <div class="day ${d.isLongRunDay ? "summary-long" : ""}">${DAY_NAMES[d.dayIndex]}</div>
+        <div class="label">${escapeHtml(keySession?.title || "Rest")}</div>
+        <div class="minutes">${minToText(keySession?.minutes || 0)}</div>
+        <div class="status-chip" data-status="${status}">${status}</div>
+      `;
+      row.addEventListener("click", () => { setSummaryMode(false, d.dayIndex); });
+      list.appendChild(row);
+    });
+    return container;
+  }
+
   let selected = { weekIndex: 0, sessionId: null };
   function setSelected(weekIndex, session) {
     selected.weekIndex = weekIndex;
@@ -1162,16 +1322,27 @@
 
   function renderWeek(plan, weekIndex) {
     const w = plan[weekIndex];
-    el.weekTitle.textContent = `Week ${weekIndex + 1} of ${CONFIG.weeks}`;
+    if (el.weekLabel) el.weekLabel.textContent = `Week ${weekIndex + 1} of ${CONFIG.weeks}`;
     el.weekPhase.textContent = w.phase;
+    const status = getWeekStatus(w);
+    applyWeekStatusUI(status);
+    const useSummary = isMobile() && UI.summaryMobile;
+    if (el.btnSummary) el.btnSummary.setAttribute("data-active", String(useSummary));
+    if (el.btnWeekDetailed) el.btnWeekDetailed.setAttribute("data-active", String(!useSummary));
+    if (el.mobileViewToggle) el.mobileViewToggle.style.display = isMobile() ? "flex" : "none";
 
     const totals = computeWeekTotals(w);
     el.weekTotals.textContent = `Totals (excl. missed): Run ${minToText(totals.run)} • Bike ${minToText(totals.bike)} • Swim ${minToText(totals.swim)} • Strength ${minToText(totals.str)} • All ${minToText(totals.total)}`;
 
     el.weekGrid.innerHTML = "";
+    if (useSummary) {
+      el.weekGrid.appendChild(renderWeekSummary(w));
+      return;
+    }
     for (const d of w.days) {
       const dayEl = document.createElement("div");
       dayEl.className = "day-card";
+      dayEl.setAttribute("data-day-index", String(d.dayIndex));
       const nonMissedRunMin = d.sessions.filter((s) => s.sport === "run" && s.status !== "missed").reduce((a, b) => a + b.minutes, 0);
       const nonMissedTotal = d.sessions.filter((s) => s.status !== "missed").reduce((a, b) => a + b.minutes, 0);
       const sessionCount = d.sessions.length;
@@ -1276,6 +1447,17 @@
     if (prev !== "missed" && status === "missed") applyMissedAdaptiveRule(plan, weekIndex, sessionId);
     saveState({ plan, activeWeek: weekIndex, selected });
     renderWeek(plan, weekIndex);
+    bindWeekSelect();
+  }
+
+  function setSummaryMode(summary, targetDay) {
+    UI.summaryMobile = summary;
+    saveUIState(UI);
+    renderWeek(state.plan, state.activeWeek);
+    if (!summary && typeof targetDay === "number") {
+      const node = el.weekGrid.querySelector(`[data-day-index="${targetDay}"]`);
+      if (node) node.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 
   function initState() {
@@ -1296,7 +1478,11 @@
     for (let i = 0; i < CONFIG.weeks; i++) {
       const opt = document.createElement("option");
       opt.value = String(i);
-      opt.textContent = `Week ${i + 1} • ${weekPhase(i)}`;
+      const week = state.plan?.[i];
+      const status = week ? getWeekStatus(week) : "future";
+      opt.textContent = `${statusIcon(status)} Week ${i + 1} • ${weekPhase(i)}`;
+      const meta = WEEK_STATUS_META[status];
+      if (meta) opt.title = meta.tooltip;
       el.weekSelect.appendChild(opt);
     }
     el.weekSelect.value = String(state.activeWeek);
@@ -1357,7 +1543,11 @@
   if (el.btnCompact && el.btnDetailed) {
     el.btnCompact.addEventListener("click", () => { setMode(false); renderWeek(state.plan, state.activeWeek); });
     el.btnDetailed.addEventListener("click", () => { setMode(true); renderWeek(state.plan, state.activeWeek); });
-    setMode(true);
+    setMode(UI.detailed);
+  }
+  if (el.btnSummary && el.btnWeekDetailed) {
+    el.btnSummary.addEventListener("click", () => setSummaryMode(true));
+    el.btnWeekDetailed.addEventListener("click", () => setSummaryMode(false));
   }
 
   // =============================
@@ -1414,6 +1604,12 @@
       assert("Pace guide reacts to source change", sourceGuide !== afterGuide);
       refreshPaces({ adjustment: prevSettings.adjustment, paceSource: prevSettings.paceSource, trialDistance: prevSettings.trialDistance, trialTime: prevSettings.trialTime, unit: prevSettings.unit });
 
+      renderPaceGuide(true);
+      renderPaceGuide(false);
+      const uiState = JSON.parse(localStorage.getItem(UI_STATE_KEY));
+      assert("Pace guide collapsed state persisted", uiState && uiState.paceCollapsed === false);
+      renderPaceGuide(true);
+
       const w = generateWeek(0, { pace: PACE, settings: currentSettings });
       const plan = [w];
       const long = w.days[longIdx].sessions.find((s) => s.sport === "run" && s.intensity === "key");
@@ -1422,6 +1618,15 @@
       assert("Recovery day initially has no key run", !dayHasKeyRun(w.days[recoveryIndex]));
       applyMissedAdaptiveRule(plan, 0, long.id);
       assert("Long run moved after miss", w.days[recoveryIndex].sessions.some((s) => s.id === long.id));
+
+      const statusWeek = { weekIndex: 0, days: [ { dayIndex: 0, sessions: [{ status: "done" }] }, { dayIndex: 1, sessions: [{ status: "planned" }] } ] };
+      assert("Week partial when some planned", getWeekStatus(statusWeek, new Date(2024, 0, 2)) === "partial");
+      statusWeek.days[1].sessions[0].status = "missed";
+      assert("Week missed when any missed", getWeekStatus(statusWeek, new Date(2024, 0, 2)) === "missed");
+      statusWeek.days[1].sessions[0].status = "done";
+      assert("Week completed when all done", getWeekStatus(statusWeek, new Date(2024, 0, 6)) === "completed");
+      const futureWeek = { weekIndex: 1, days: [] };
+      assert("Future week flagged", getWeekStatus(futureWeek, new Date()) === "future");
 
       const prevMode = UI.detailed; setMode(false); const card = renderSessionCard({ id: "t", sport: "run", title: "Test Session", minutes: 30, intensity: "easy", optional: false, details: "Details", status: "planned", moved: false }, 0); assert("Compact renders data-open false", card.getAttribute("data-open") === "false"); assert("Compact aria-expanded false", card.querySelector(".session-head").getAttribute("aria-expanded") === "false"); setMode(prevMode);
 
@@ -1440,6 +1645,18 @@
       assert("Settings persisted", persisted.planLength === persistenceSettings.planLength && persisted.longRunDay === persistenceSettings.longRunDay && persisted.unit === "mi" && persisted.adjustment === 8);
       const restoredPlan = loadState();
       assert("Plan state persisted", restoredPlan && restoredPlan.plan && restoredPlan.plan.length === CONFIG.weeks);
+
+      const summaryEl = renderWeekSummary(state.plan[0]);
+      assert("Summary renders totals", summaryEl.textContent.includes("Totals:"));
+      const summaryRows = summaryEl.querySelectorAll(".week-summary-row");
+      assert("Summary shows all days", summaryRows.length === 7);
+
+      UI.summaryMobile = true;
+      renderWeek(state.plan, state.activeWeek);
+      setSummaryMode(false, 2);
+      assert("Summary toggle flips to detailed", UI.summaryMobile === false);
+      const scrolled = el.weekGrid.querySelector('[data-day-index="2"]');
+      assert("Detailed view present after toggle", !!scrolled);
 
       toast("✅ Tests passed");
     } catch (e) {
