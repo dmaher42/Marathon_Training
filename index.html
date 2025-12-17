@@ -800,12 +800,55 @@
   // =============================
   // Plan generation
   // =============================
-  function weekPhase(i) {
-    if (i <= 5) return "Base";
-    if (i <= 11) return "Build";
-    if (i <= 13) return "Peak";
-    return "Taper";
+
+  function getPlanStructure(weeks) {
+    const taperWeeks = clamp(Math.round(weeks * 0.15), 2, 3);
+    const peakWeeks = clamp(Math.round(weeks * 0.12), 2, 3);
+    const remaining = weeks - taperWeeks - peakWeeks;
+
+    // Baseline (17 weeks): Taper=3, Peak=2, Remaining=12. Base=6, Build=6.
+    const remainingBaseline = 12; // 6 + 6
+
+    const extra = remaining - remainingBaseline;
+    const extraBase = Math.round(extra * 0.40);
+    const extraBuild = extra - extraBase;
+
+    const baseWeeks = 6 + extraBase;
+    const buildWeeks = 6 + extraBuild;
+
+    return { baseWeeks, buildWeeks, peakWeeks, taperWeeks };
   }
+
+  function getPhaseStats(i, structure) {
+    let phase = "";
+    let weekInPhase = 0;
+    let phaseLength = 0;
+
+    if (i < structure.baseWeeks) {
+      phase = "Base";
+      weekInPhase = i;
+      phaseLength = structure.baseWeeks;
+    } else if (i < structure.baseWeeks + structure.buildWeeks) {
+      phase = "Build";
+      weekInPhase = i - structure.baseWeeks;
+      phaseLength = structure.buildWeeks;
+    } else if (i < structure.baseWeeks + structure.buildWeeks + structure.peakWeeks) {
+      phase = "Peak";
+      weekInPhase = i - (structure.baseWeeks + structure.buildWeeks);
+      phaseLength = structure.peakWeeks;
+    } else {
+      phase = "Taper";
+      weekInPhase = i - (structure.baseWeeks + structure.buildWeeks + structure.peakWeeks);
+      phaseLength = structure.taperWeeks;
+    }
+    return { phase, weekInPhase, phaseLength };
+  }
+
+  function weekPhase(i, structure) {
+    if (!structure) return "Base";
+    return getPhaseStats(i, structure).phase;
+  }
+
   function isKeyRun(session) { return session.sport === "run" && session.intensity === "key"; }
 
   function applyCrossTrainingPreferences(days, prefs) {
@@ -844,31 +887,68 @@
     });
   }
 
-  function generateWeek(weekIndex, ctx = { pace: PACE, settings: currentSettings }) {
+  function generateWeek(weekIndex, ctx = { pace: PACE, settings: currentSettings, config: CONFIG, structure: null }) {
     const pace = ctx.pace || PACE;
     const settings = ctx.settings || currentSettings;
+    const config = ctx.config || CONFIG;
+    const structure = ctx.structure || getPlanStructure(config.weeks);
+
     const longRunDayIndex = Number(settings.longRunDay);
     const recoveryRunDay = longRunDayIndex === 6 ? 5 : 6;
-    const phase = weekPhase(weekIndex);
+
+    const { phase, weekInPhase, phaseLength } = getPhaseStats(weekIndex, structure);
+
+    // Volume interpolation
     const baseStart = 250;
-    const peak = 410;
-    let runMin;
-    if (phase === "Base") runMin = baseStart + weekIndex * 15;
-    else if (phase === "Build") runMin = baseStart + 6 * 15 + (weekIndex - 6) * 18;
-    else if (phase === "Peak") runMin = peak - (13 - weekIndex) * 10;
-    else {
-      const t = weekIndex - 14;
-      runMin = Math.round(peak * (t === 1 ? 0.75 : t === 2 ? 0.6 : 0.45));
+    const baseEnd = 325; // approx 250 + 5*15
+    const buildStart = 340;
+    const buildEnd = 415; // approx 325 + 5*18
+    const peakVol = 410;
+
+    let runMin = 0;
+    if (phase === "Base") {
+      // Interpolate 250 -> 325
+      const t = phaseLength > 1 ? weekInPhase / (phaseLength - 1) : 0;
+      runMin = Math.round(baseStart + t * (baseEnd - baseStart));
+    } else if (phase === "Build") {
+      // Interpolate 340 -> 415
+      const t = phaseLength > 1 ? weekInPhase / (phaseLength - 1) : 0;
+      runMin = Math.round(buildStart + t * (buildEnd - buildStart));
+    } else if (phase === "Peak") {
+       // Peak volume usually holds or slight dip
+       // Original: peak - (13 - weekIndex) * 10
+       // Let's keep it around 400-410
+       runMin = Math.round(peakVol - (phaseLength - 1 - weekInPhase) * 10);
+    } else {
+      // Taper
+      // Original logic: peak * (0.75, 0.6, 0.45)
+      // We can map weekInPhase 0..T-1 to these factors
+      // If T=3: 0.75, 0.60, 0.45
+      // If T=2: 0.75, 0.45? Or 0.6, 0.45?
+      // Let's interpolate 0.75 -> 0.45
+      const startFactor = 0.75;
+      const endFactor = 0.45;
+      const t = phaseLength > 1 ? weekInPhase / (phaseLength - 1) : 0;
+      runMin = Math.round(peakVol * (startFactor + t * (endFactor - startFactor)));
     }
 
     const isRecovery = phase !== "Taper" && ((weekIndex + 1) % 4 === 0);
     if (isRecovery) runMin = Math.round(runMin * 0.75);
 
     const longMinByPhase = (() => {
-      if (phase === "Base") return clamp(90 + weekIndex * 10, 90, 140);
-      if (phase === "Build") return clamp(135 + (weekIndex - 6) * 10, 135, 180);
+      if (phase === "Base") {
+         const t = phaseLength > 1 ? weekInPhase / (phaseLength - 1) : 1;
+         return clamp(Math.round((90 + t * (140 - 90)) / 5) * 5, 90, 140);
+      }
+      if (phase === "Build") {
+         const t = phaseLength > 1 ? weekInPhase / (phaseLength - 1) : 1;
+         return clamp(Math.round((135 + t * (180 - 135)) / 5) * 5, 135, 180);
+      }
       if (phase === "Peak") return 190;
-      return clamp(120 - (weekIndex - 14) * 20, 70, 120);
+      // Taper long run
+      // Original: 120, 100, 70 (approx)
+      const t = phaseLength > 1 ? weekInPhase / (phaseLength - 1) : 1;
+      return clamp(Math.round((120 - t * (120 - 70)) / 5) * 5, 70, 120);
     })();
     const longMin = isRecovery && phase !== "Taper" ? Math.round(longMinByPhase * 0.75) : longMinByPhase;
 
@@ -936,7 +1016,8 @@
 
   function generatePlan(ctx = { pace: PACE, settings: currentSettings, config: CONFIG }) {
     const weeks = [];
-    for (let i = 0; i < ctx.config.weeks; i++) weeks.push(generateWeek(i, ctx));
+    const structure = getPlanStructure(ctx.config.weeks);
+    for (let i = 0; i < ctx.config.weeks; i++) weeks.push(generateWeek(i, { ...ctx, structure }));
     return weeks;
   }
 
@@ -1520,12 +1601,13 @@
 
   function bindWeekSelect() {
     el.weekSelect.innerHTML = "";
+    const structure = getPlanStructure(CONFIG.weeks);
     for (let i = 0; i < CONFIG.weeks; i++) {
       const opt = document.createElement("option");
       opt.value = String(i);
       const week = state.plan?.[i];
       const status = week ? getWeekStatus(week) : "future";
-      opt.textContent = `${statusIcon(status)} Week ${i + 1} • ${weekPhase(i)}`;
+      opt.textContent = `${statusIcon(status)} Week ${i + 1} • ${weekPhase(i, structure)}`;
       const meta = WEEK_STATUS_META[status];
       if (meta) opt.title = meta.tooltip;
       el.weekSelect.appendChild(opt);
@@ -1618,6 +1700,31 @@
       const longIdx = Number(currentSettings.longRunDay);
       const w0 = p[0];
       assert("Selected day has long run key", w0.days[longIdx].sessions.some((s) => s.sport === "run" && s.intensity === "key" && s.title.includes("Long Run")));
+
+      // New tests for scaling
+      const p20 = generatePlanWithSettings({ planLength: 20 });
+      const struct20 = getPlanStructure(20);
+      assert("N=20: Taper <= 3", struct20.taperWeeks <= 3);
+      assert("N=20: Peak <= 3", struct20.peakWeeks <= 3);
+      // Base + Build should be 15 weeks (20 - 2 - 3).
+      // Baseline 12. Increase by 3.
+      assert("N=20: Base+Build count", struct20.baseWeeks + struct20.buildWeeks === 20 - struct20.taperWeeks - struct20.peakWeeks);
+      assert("N=20: Base increases", struct20.baseWeeks > 6);
+
+      // First added week is Base
+      // Week 0 is Base. Week 6 is Base (since Base is 7).
+      assert("Week 0 is Base", p20[0].phase.startsWith("Base"));
+      assert("Week 6 is Base", p20[6].phase.startsWith("Base"));
+      assert("Week 7 is Build", p20[7].phase.startsWith("Build"));
+
+      // Long run progression N=20
+      // Check intermediate steps.
+      const lr0 = p20[0].days[longIdx].sessions.find(isKeyRun).minutes;
+      const lr1 = p20[1].days[longIdx].sessions.find(isKeyRun).minutes;
+      assert("N=20: Long run ramps up", lr1 >= lr0);
+      // Check progression is interpolated (more gradual than +10)
+      // 90 -> 100 in week 1
+      assert("N=20: Week 1 long run", lr1 === 100);
 
       const plan12 = generatePlanWithSettings({ planLength: 12 });
       assert("custom plan length", plan12.length === 12);
