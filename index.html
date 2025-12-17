@@ -153,6 +153,30 @@
       font-size: var(--text-sm);
     }
     .pace-guide .title { font-weight: 900; color: var(--text-strong); letter-spacing: 0.2px; }
+    .pace-guide .note { color: var(--text-muted); font-size: var(--text-sm); }
+    .settings-toggle {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      font-weight: 800;
+      color: var(--text-strong);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+    }
+    .settings-toggle span { font-size: var(--text-sm); color: var(--text-muted); font-weight: 500; }
+    .pace-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--space-3); }
+    .range-row { display: flex; align-items: center; gap: var(--space-2); }
+    .range-row input[type="range"] { flex: 1; }
+    .unit-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); }
+    .unit-toggle button { border: none; box-shadow: none; padding: 10px 12px; font-weight: 800; background: #fff; }
+    .unit-toggle button[data-active="true"] { background: rgba(95, 141, 245, 0.12); border-right: 1px solid var(--line); }
+    .unit-toggle button:first-child { border-right: 1px solid var(--line); }
+    .hr-note { font-size: var(--text-sm); color: var(--text-muted); }
 
     .week-meta {
       margin-top: var(--space-3);
@@ -344,6 +368,61 @@
           <div class="minutes"><input type="number" id="strengthMinutes" min="0" step="5" aria-label="Strength minutes per week" /> <small>min / week</small></div>
         </div>
       </div>
+      <details id="paceSettings" open>
+        <summary class="settings-toggle">Pace settings <span>(zones, adjustment, units)</span></summary>
+        <div class="pace-settings">
+          <div class="form-group">
+            <label for="paceSource">Pace source</label>
+            <select id="paceSource" aria-label="Select pace source">
+              <option value="goal">Goal marathon time</option>
+              <option value="recent">Recent race</option>
+              <option value="trial">Custom time trial</option>
+            </select>
+            <small>Pick which effort to base your zones on.</small>
+          </div>
+          <div class="form-group" id="trialDistanceWrap">
+            <label for="trialDistance">Trial distance</label>
+            <select id="trialDistance" aria-label="Select time trial distance">
+              <option value="5">5K</option>
+              <option value="10">10K</option>
+              <option value="21.0975">Half marathon</option>
+              <option value="42.195">Marathon</option>
+            </select>
+            <small>Used only when "Custom time trial" is selected.</small>
+          </div>
+          <div class="form-group" id="trialTimeWrap">
+            <label for="trialTime">Trial time (hh:mm:ss)</label>
+            <input type="text" id="trialTime" aria-label="Custom time trial result" placeholder="0:25:00" pattern="\d{1,2}:\d{2}(:\d{2})?" />
+            <small>Enter your best recent effort.</small>
+          </div>
+          <div class="form-group">
+            <label for="adjustment">Heat / effort adjustment</label>
+            <div class="range-row">
+              <input type="range" id="adjustment" min="-20" max="30" step="1" aria-label="Adjust paces slower or faster" />
+              <div id="adjustmentValue" aria-live="polite">0 sec/km</div>
+            </div>
+            <small>Positive = slower paces (hot/hilly/tired). Negative = faster (cool/flat/strong).</small>
+          </div>
+          <div class="form-group">
+            <label>Units</label>
+            <div class="unit-toggle" role="group" aria-label="Toggle units">
+              <button type="button" id="unitKm" data-unit="km" data-active="true">km</button>
+              <button type="button" id="unitMi" data-unit="mi" data-active="false">mi</button>
+            </div>
+            <small>Switch pace display between km and miles.</small>
+          </div>
+          <div class="form-group">
+            <label for="maxHr">Heart rate guidance (optional)</label>
+            <input type="number" id="maxHr" min="0" inputmode="numeric" aria-label="Max heart rate" placeholder="Max HR" />
+            <small>Set max HR and easy cap for context; use HR cap on easy days.</small>
+          </div>
+          <div class="form-group">
+            <label for="easyHr">Easy HR cap</label>
+            <input type="number" id="easyHr" min="0" inputmode="numeric" aria-label="Easy heart rate cap" placeholder="Easy HR cap" />
+            <small class="hr-note">Use HR cap for easy/long days; paces shown are guidance.</small>
+          </div>
+        </div>
+      </details>
       <div class="form-actions">
         <button type="submit" id="generatePlan">Generate Plan</button>
       </div>
@@ -351,10 +430,8 @@
   </div>
 
   <div class="pace-guide" id="paceGuide" aria-label="Pace guide">
-    <div class="title">Pace guide (adjust by feel &amp; heat):</div>
-    <div>Easy: <b>5:45–6:30/km</b> • Long: <b>5:30–6:10/km</b></div>
-    <div>Marathon pace (MP): <b>4:55–5:05/km</b></div>
-    <div>Threshold/Tempo: <b>4:30–4:40/km</b> • Intervals: <b>4:05–4:20/km</b></div>
+    <div class="title">Pace guide</div>
+    <div class="note">Enter your info to refresh zones.</div>
   </div>
 
   <div class="week-meta" id="weekMeta">
@@ -399,12 +476,21 @@
     goalTime: "3:30:00",
     recentTime: "1:40:00",
     longRunDay: "5",
+    paceSource: "goal",
+    trialDistance: "5",
+    trialTime: "0:25:00",
+    adjustment: 0,
+    unit: "km",
+    maxHr: "",
+    easyHr: "",
     crossTraining: {
       bike: { enabled: true, minutes: 55 },
       swim: { enabled: true, minutes: 65 },
       strength: { enabled: true, minutes: 45 },
     },
   };
+  const MARATHON_KM = 42.195;
+  const HALF_KM = 21.0975;
   const XTRAIN_TEMPLATES = { bike: [30, 25], swim: [25, 20, 20], strength: [25, 20] };
   const STORAGE_KEY = "marathonPlan17w_weekview_v3";
   const SETTINGS_KEY = "marathonPlan_personalization_v1";
@@ -414,7 +500,17 @@
   // Helpers
   function toSeconds(h, m, s = 0) { return h * 3600 + m * 60 + s; }
   function pacePerKmFromRace(seconds, km) { return seconds / km; }
-  function fmtPace(secPerKm) { const mm = Math.floor(secPerKm / 60); const ss = Math.round(secPerKm % 60); return `${mm}:${String(ss).padStart(2, "0")}/km`; }
+  function parseTimeToSeconds(str) { return parseTimeInput(str); }
+  function convertSecPerKmToUnit(secPerKm, unit) { return unit === "mi" ? secPerKm * 1.609344 : secPerKm; }
+  function secondsToPaceString(secPerKm, unit = "km") {
+    if (!Number.isFinite(secPerKm) || secPerKm <= 0) return "-";
+    const secPerUnit = convertSecPerKmToUnit(secPerKm, unit);
+    const mm = Math.floor(secPerUnit / 60);
+    const ss = Math.round(secPerUnit % 60);
+    return `${mm}:${String(ss).padStart(2, "0")}/${unit}`;
+  }
+  function fmtPace(secPerKm, unit = currentUnit) { return secondsToPaceString(secPerKm, unit); }
+  function fmtRange(range, unit = currentUnit) { return `${fmtPace(range[0], unit)}–${fmtPace(range[1], unit)}`; }
   function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
   function uid(prefix) { return `${prefix}_${Math.random().toString(36).slice(2, 9)}`; }
   function minToText(min) { const h = Math.floor(min / 60); const m = min % 60; return h ? `${h}h ${m}m` : `${m}m`; }
@@ -470,12 +566,26 @@
     };
     const parsedLong = Number(base.longRunDay);
     const longRunDay = Number.isFinite(parsedLong) && parsedLong >= 0 ? String(parsedLong % 7) : DEFAULT_SETTINGS.longRunDay;
+    const paceSource = ["goal", "recent", "trial"].includes(base.paceSource) ? base.paceSource : DEFAULT_SETTINGS.paceSource;
+    const adjustment = Number.isFinite(Number(base.adjustment)) ? clamp(Number(base.adjustment), -20, 30) : DEFAULT_SETTINGS.adjustment;
+    const unit = base.unit === "mi" ? "mi" : "km";
+    const trialDistance = String(base.trialDistance || DEFAULT_SETTINGS.trialDistance);
+    const trialTime = normalizeTimeString(base.trialTime, DEFAULT_SETTINGS.trialTime);
+    const maxHr = base.maxHr === null || base.maxHr === undefined ? "" : String(base.maxHr).trim();
+    const easyHr = base.easyHr === null || base.easyHr === undefined ? "" : String(base.easyHr).trim();
     return {
       raceDate: base.raceDate || "",
       planLength: base.planLength === 0 ? "" : base.planLength === null ? "" : base.planLength === undefined ? "" : base.planLength,
       goalTime: normalizeTimeString(base.goalTime, DEFAULT_SETTINGS.goalTime),
       recentTime: normalizeTimeString(base.recentTime, DEFAULT_SETTINGS.recentTime),
       longRunDay,
+      paceSource,
+      trialDistance,
+      trialTime,
+      adjustment,
+      unit,
+      maxHr,
+      easyHr,
       crossTraining: cross,
     };
   }
@@ -495,16 +605,52 @@
     };
   }
 
-  function computePaces(goalSeconds, recentSeconds) {
-    const hmPace = pacePerKmFromRace(recentSeconds, 21.0975);
-    const goalMp = pacePerKmFromRace(goalSeconds, 42.195);
+  function predictTimeForDistance(timeSeconds, fromKm, toKm) {
+    if (!Number.isFinite(timeSeconds) || !Number.isFinite(fromKm) || fromKm <= 0) return null;
+    return timeSeconds * Math.pow(toKm / fromKm, 1.06);
+  }
+
+  function computeBaseZones(goalSeconds, recentSeconds) {
+    const hmPace = pacePerKmFromRace(recentSeconds, HALF_KM);
+    const goalMp = pacePerKmFromRace(goalSeconds, MARATHON_KM);
+    const intervals = [hmPace - 39, hmPace - 24];
     return {
       easy: [goalMp + 46, goalMp + 91],
       long: [goalMp + 31, goalMp + 71],
       mp: [goalMp - 4, goalMp + 6],
       tempo: [hmPace - 14, hmPace - 4],
-      int: [hmPace - 39, hmPace - 24],
+      intervals,
+      int: intervals,
     };
+  }
+
+  function computeZonesFromSource(sourceType, raceDistanceKm, timeSeconds, goalTimeSeconds, recentHalfSeconds) {
+    const distance = Number(raceDistanceKm) || HALF_KM;
+    const primaryTime = Number(timeSeconds);
+    const goalSeconds = Number(goalTimeSeconds);
+    const recentSeconds = Number(recentHalfSeconds);
+    const predict = (target) => predictTimeForDistance(primaryTime, distance, target);
+    const marathonSeconds = sourceType === "goal" && Number.isFinite(goalSeconds)
+      ? goalSeconds
+      : predict(MARATHON_KM) ?? goalSeconds ?? parseTimeInput(DEFAULT_SETTINGS.goalTime);
+    const halfSeconds = (() => {
+      if (sourceType === "goal" && Number.isFinite(recentSeconds)) return recentSeconds;
+      const predicted = predict(HALF_KM);
+      if (Number.isFinite(predicted)) return predicted;
+      if (Number.isFinite(recentSeconds)) return recentSeconds;
+      return predictTimeForDistance(marathonSeconds, MARATHON_KM, HALF_KM) ?? parseTimeInput(DEFAULT_SETTINGS.recentTime);
+    })();
+    return computeBaseZones(marathonSeconds, halfSeconds);
+  }
+
+  function applyAdjustment(zones, adjustmentSeconds = 0) {
+    const adj = Number(adjustmentSeconds) || 0;
+    const out = {};
+    Object.entries(zones || {}).forEach(([k, range]) => {
+      if (!Array.isArray(range)) return;
+      out[k] = range.map((v) => v + adj);
+    });
+    return out;
   }
 
   function settingsSignature(settings, config) { return JSON.stringify({ settings, weeks: config.weeks }); }
@@ -524,12 +670,28 @@
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
   }
 
+  function computeZonesFromSettings(settings) {
+    const goalSeconds = parseTimeToSeconds(settings.goalTime) ?? parseTimeToSeconds(DEFAULT_SETTINGS.goalTime);
+    const recentSeconds = parseTimeToSeconds(settings.recentTime) ?? parseTimeToSeconds(DEFAULT_SETTINGS.recentTime);
+    const sourceType = settings.paceSource || "goal";
+    let sourceDistance = settings.paceSource === "goal" ? MARATHON_KM : HALF_KM;
+    let sourceTime = sourceType === "goal" ? goalSeconds : recentSeconds;
+    if (sourceType === "trial") {
+      sourceDistance = Number(settings.trialDistance) || HALF_KM;
+      sourceTime = parseTimeInput(settings.trialTime) ?? recentSeconds;
+    }
+    if (sourceType === "recent") {
+      sourceDistance = HALF_KM;
+      sourceTime = recentSeconds;
+    }
+    return computeZonesFromSource(sourceType, sourceDistance, sourceTime, goalSeconds, recentSeconds);
+  }
+
   let currentSettings = normalizeSettings(loadPersonalizationSettings());
   let CONFIG = buildConfigFromSettings(currentSettings);
-  let PACE = computePaces(
-    parseTimeInput(currentSettings.goalTime) ?? toSeconds(3, 30),
-    parseTimeInput(currentSettings.recentTime) ?? toSeconds(1, 40)
-  );
+  let BASE_ZONES = computeZonesFromSettings(currentSettings);
+  let PACE = applyAdjustment(BASE_ZONES, currentSettings.adjustment);
+  let currentUnit = currentSettings.unit;
   let currentSignature = settingsSignature(currentSettings, CONFIG);
 
   // =============================
@@ -608,16 +770,16 @@
     const longMin = isRecovery && phase !== "Taper" ? Math.round(longMinByPhase * 0.75) : longMinByPhase;
 
     const tuesdayKey = (() => {
-      if (phase === "Taper") return { title: "Sharpening Intervals", minutes: 55, details: `WU 15m • 6×400m @ ${fmtPace(pace.int[0])}–${fmtPace(pace.int[1])} • CD 10m` };
-      if (isRecovery) return { title: "Light Fartlek", minutes: 50, details: `Easy 15m • 6×1m steady (~${fmtPace(pace.tempo[0])}–${fmtPace(pace.tempo[1])}) w/ 1m easy` };
-      return { title: "Intervals", minutes: phase === "Base" ? 55 : 65, details: `WU 15m • 5–8×3m @ ${fmtPace(pace.int[0])}–${fmtPace(pace.int[1])} w/ 2m easy • CD 10m` };
+      if (phase === "Taper") return { title: "Sharpening Intervals", minutes: 55, detailsTemplate: "WU 15m • 6×400m @ {INTERVALS} • CD 10m" };
+      if (isRecovery) return { title: "Light Fartlek", minutes: 50, detailsTemplate: "Easy 15m • 6×1m steady (~{TEMPO}) w/ 1m easy" };
+      return { title: "Intervals", minutes: phase === "Base" ? 55 : 65, detailsTemplate: "WU 15m • 5–8×3m @ {INTERVALS} w/ 2m easy • CD 10m" };
     })();
 
     const thursdayKey = (() => {
-      if (phase === "Taper") return { title: "Marathon Pace Tune-up", minutes: 60, details: `WU 15m • 2×10m @ MP (${fmtPace(pace.mp[0])}–${fmtPace(pace.mp[1])}) w/ 5m easy • CD` };
-      if (phase === "Peak") return { title: "Extended MP", minutes: 80, details: `WU 15m • 40m @ MP (${fmtPace(pace.mp[0])}–${fmtPace(pace.mp[1])}) • CD 10m` };
-      if (isRecovery) return { title: "Steady Aerobic", minutes: 65, details: `Mostly easy (${fmtPace(pace.easy[0])}–${fmtPace(pace.easy[1])}). Finish 10m steady.` };
-      return { title: "Tempo / MP Blend", minutes: phase === "Base" ? 70 : 75, details: `WU 15m • 20m tempo (${fmtPace(pace.tempo[0])}–${fmtPace(pace.tempo[1])}) then 15m @ MP • CD` };
+      if (phase === "Taper") return { title: "Marathon Pace Tune-up", minutes: 60, detailsTemplate: "WU 15m • 2×10m @ MP ({MP}) w/ 5m easy • CD" };
+      if (phase === "Peak") return { title: "Extended MP", minutes: 80, detailsTemplate: "WU 15m • 40m @ MP ({MP}) • CD 10m" };
+      if (isRecovery) return { title: "Steady Aerobic", minutes: 65, detailsTemplate: "Mostly easy ({EASY}). Finish 10m steady." };
+      return { title: "Tempo / MP Blend", minutes: phase === "Base" ? 70 : 75, detailsTemplate: "WU 15m • 20m tempo ({TEMPO}) then 15m @ MP • CD" };
     })();
 
     const fixed = tuesdayKey.minutes + thursdayKey.minutes + longMin;
@@ -631,30 +793,30 @@
     days[0].sessions.push({ id: uid("rest"), sport: "rest", title: "Rest / Mobility", minutes: 0, intensity: "recovery", optional: false, details: "Off feet. 10–15m mobility: calves, hips, hamstrings, T-spine.", status: "planned", moved: false });
     days[0].sessions.push({ id: uid("str"), sport: "strength", title: "Strength (light)", minutes: 25, intensity: "recovery", optional: true, details: "20–30m: single-leg, glutes, core. Keep it easy.", status: "planned", moved: false });
 
-    days[1].sessions.push({ id: uid("run"), sport: "run", title: tuesdayKey.title, minutes: tuesdayKey.minutes, intensity: "key", optional: false, details: tuesdayKey.details, status: "planned", moved: false });
+    days[1].sessions.push({ id: uid("run"), sport: "run", title: tuesdayKey.title, minutes: tuesdayKey.minutes, intensity: "key", optional: false, detailsTemplate: tuesdayKey.detailsTemplate, status: "planned", moved: false });
     days[1].sessions.push({ id: uid("sw"), sport: "swim", title: "Swim (easy recovery)", minutes: 25, intensity: "recovery", optional: true, details: "Easy continuous + drills. Keep HR low.", status: "planned", moved: false });
 
-    days[2].sessions.push({ id: uid("run"), sport: "run", title: "Easy Run", minutes: wedMin, intensity: "easy", optional: false, details: `Easy ${fmtPace(pace.easy[0])}–${fmtPace(pace.easy[1])}. Add 6×20s strides if fresh.`, status: "planned", moved: false });
+    days[2].sessions.push({ id: uid("run"), sport: "run", title: "Easy Run", minutes: wedMin, intensity: "easy", optional: false, detailsTemplate: "Easy {EASY}. Add 6×20s strides if fresh.", status: "planned", moved: false });
     days[2].sessions.push({ id: uid("str"), sport: "strength", title: "Strength (optional)", minutes: 20, intensity: "recovery", optional: true, details: "Core + hips. Avoid heavy legs midweek.", status: "planned", moved: false });
 
-    days[3].sessions.push({ id: uid("run"), sport: "run", title: thursdayKey.title, minutes: thursdayKey.minutes, intensity: "key", optional: false, details: thursdayKey.details, status: "planned", moved: false });
+    days[3].sessions.push({ id: uid("run"), sport: "run", title: thursdayKey.title, minutes: thursdayKey.minutes, intensity: "key", optional: false, detailsTemplate: thursdayKey.detailsTemplate, status: "planned", moved: false });
     days[3].sessions.push({ id: uid("bk"), sport: "bike", title: "Bike (easy spin)", minutes: 30, intensity: "recovery", optional: true, details: "Z1–Z2, high cadence. Pure recovery.", status: "planned", moved: false });
 
-    days[4].sessions.push({ id: uid("run"), sport: "run", title: "Easy + Strides", minutes: friMin, intensity: "easy", optional: false, details: `Easy ${fmtPace(pace.easy[0])}–${fmtPace(pace.easy[1])}. Finish 6×15s strides.`, status: "planned", moved: false });
+    days[4].sessions.push({ id: uid("run"), sport: "run", title: "Easy + Strides", minutes: friMin, intensity: "easy", optional: false, detailsTemplate: "Easy {EASY}. Finish 6×15s strides.", status: "planned", moved: false });
     days[4].sessions.push({ id: uid("sw"), sport: "swim", title: "Swim (easy)", minutes: 20, intensity: "recovery", optional: true, details: "Relaxed swim or pool walk. Keep it easy.", status: "planned", moved: false });
 
     const longDetails = (() => {
-      if (phase === "Peak" && !isRecovery) return `Long run ${fmtPace(pace.long[0])}–${fmtPace(pace.long[1])}. Include 2×20m @ MP (${fmtPace(pace.mp[0])}–${fmtPace(pace.mp[1])}) w/ 10m easy between. Practice fueling.`;
-      if (phase === "Build" && !isRecovery) return `Long run ${fmtPace(pace.long[0])}–${fmtPace(pace.long[1])}. Last 20m slightly faster if good (≤ MP).`;
-      if (phase === "Taper") return `Long run ${fmtPace(pace.long[0])}–${fmtPace(pace.long[1])}. Comfortable. No hero efforts.`;
-      return `Long run ${fmtPace(pace.long[0])}–${fmtPace(pace.long[1])}. Conversational. Fuel 30–60g carbs/hour + fluids.`;
+      if (phase === "Peak" && !isRecovery) return "Long run {LONG}. Include 2×20m @ MP ({MP}) w/ 10m easy between. Practice fueling.";
+      if (phase === "Build" && !isRecovery) return "Long run {LONG}. Last 20m slightly faster if good (≤ MP).";
+      if (phase === "Taper") return "Long run {LONG}. Comfortable. No hero efforts.";
+      return "Long run {LONG}. Conversational. Fuel 30–60g carbs/hour + fluids.";
     })();
 
-    days[longRunDayIndex].sessions.push({ id: uid("run"), sport: "run", title: `Long Run (${DAY_NAMES[longRunDayIndex]})`, minutes: longMin, intensity: "key", optional: false, details: longDetails, status: "planned", moved: false });
+    days[longRunDayIndex].sessions.push({ id: uid("run"), sport: "run", title: `Long Run (${DAY_NAMES[longRunDayIndex]})`, minutes: longMin, intensity: "key", optional: false, detailsTemplate: longDetails, status: "planned", moved: false });
     days[longRunDayIndex].isLongRunDay = true;
     days[longRunDayIndex].sessions.push({ id: uid("bk"), sport: "bike", title: "Bike (optional flush)", minutes: 25, intensity: "recovery", optional: true, details: "Very easy spin later if legs feel heavy.", status: "planned", moved: false });
 
-    days[recoveryRunDay].sessions.push({ id: uid("run"), sport: "run", title: "Recovery Run", minutes: sunMin, intensity: "easy", optional: false, details: `Very easy ${fmtPace(pace.easy[0])}–${fmtPace(pace.easy[1])}. Keep it gentle.`, status: "planned", moved: false });
+    days[recoveryRunDay].sessions.push({ id: uid("run"), sport: "run", title: "Recovery Run", minutes: sunMin, intensity: "easy", optional: false, detailsTemplate: "Very easy {EASY}. Keep it gentle.", status: "planned", moved: false });
     days[6].sessions.push({ id: uid("sw"), sport: "swim", title: "Swim (recovery)", minutes: 20, intensity: "recovery", optional: true, details: "Easy technique + mobility in the water.", status: "planned", moved: false });
 
     applyCrossTrainingPreferences(days, settings.crossTraining);
@@ -716,7 +878,8 @@
     session.title = "Converted Easy Run";
     session.intensity = "easy";
     session.minutes = clamp(session.minutes, 30, 45);
-    session.details = `Easy ${fmtPace(PACE.easy[0])}–${fmtPace(PACE.easy[1])}. This replaced a missed key session.`;
+    session.detailsTemplate = "Easy {EASY}. This replaced a missed key session.";
+    session.details = session.detailsTemplate;
     session.moved = true;
   }
   function applyMissedAdaptiveRule(plan, weekIndex, sessionId) {
@@ -778,6 +941,15 @@
     swimMinutes: document.getElementById("swimMinutes"),
     strengthEnabled: document.getElementById("strengthEnabled"),
     strengthMinutes: document.getElementById("strengthMinutes"),
+    paceSource: document.getElementById("paceSource"),
+    trialDistance: document.getElementById("trialDistance"),
+    trialTime: document.getElementById("trialTime"),
+    adjustment: document.getElementById("adjustment"),
+    adjustmentValue: document.getElementById("adjustmentValue"),
+    unitKm: document.getElementById("unitKm"),
+    unitMi: document.getElementById("unitMi"),
+    maxHr: document.getElementById("maxHr"),
+    easyHr: document.getElementById("easyHr"),
   };
 
   const UI = { detailed: true };
@@ -800,14 +972,60 @@
     el.subtitle.textContent = `${CONFIG.weeks} weeks • Goal ${currentSettings.goalTime} • Long run ${longDay} • Mark sessions Done/Missed to adapt`;
   }
 
+  function paceRangeLabel(key, unit = currentUnit) {
+    const range = PACE && PACE[key ? key.toLowerCase() : ""];
+    if (!range) return "-";
+    return fmtRange(range, unit);
+  }
+
+  function formatDetails(template) {
+    if (!template) return "";
+    const replacements = {
+      EASY: paceRangeLabel("easy"),
+      LONG: paceRangeLabel("long"),
+      MP: paceRangeLabel("mp"),
+      TEMPO: paceRangeLabel("tempo"),
+      INTERVALS: paceRangeLabel("intervals") || paceRangeLabel("int"),
+    };
+    return template.replace(/\{(EASY|LONG|MP|TEMPO|INTERVALS)\}/g, (_, key) => replacements[key] || "");
+  }
+
   function renderPaceGuide() {
     if (!el.paceGuide) return;
+    const adj = Number(currentSettings.adjustment) || 0;
+    const baseMp = BASE_ZONES?.mp?.[0] || 0;
+    const pct = baseMp ? Math.round((adj / baseMp) * 1000) / 10 : 0;
+    const adjLabel = `${adj >= 0 ? "+" : ""}${adj} sec/km ${pct ? `(~${pct}% )` : ""}`;
+    const hrNote = currentSettings.easyHr || currentSettings.maxHr ? `<div class="note">Use HR cap for easy/long: ${currentSettings.easyHr || ""}${currentSettings.easyHr && currentSettings.maxHr ? " bpm of " : ""}${currentSettings.maxHr ? `${currentSettings.maxHr} max` : ""}</div>` : "";
     el.paceGuide.innerHTML = `
-      <div class="title">Pace guide (adjust by feel &amp; heat):</div>
-      <div>Easy: <b>${fmtPace(PACE.easy[0])}–${fmtPace(PACE.easy[1])}</b> • Long: <b>${fmtPace(PACE.long[0])}–${fmtPace(PACE.long[1])}</b></div>
-      <div>Marathon pace (MP): <b>${fmtPace(PACE.mp[0])}–${fmtPace(PACE.mp[1])}</b></div>
-      <div>Threshold/Tempo: <b>${fmtPace(PACE.tempo[0])}–${fmtPace(PACE.tempo[1])}</b> • Intervals: <b>${fmtPace(PACE.int[0])}–${fmtPace(PACE.int[1])}</b></div>
+      <div class="title">Pace guide (${currentUnit})</div>
+      <div class="note">Adjustment: ${adjLabel}</div>
+      <div>Easy: <b>${paceRangeLabel("easy")}</b> • Long: <b>${paceRangeLabel("long")}</b></div>
+      <div>Marathon pace (MP): <b>${paceRangeLabel("mp")}</b></div>
+      <div>Threshold/Tempo: <b>${paceRangeLabel("tempo")}</b> • Intervals: <b>${paceRangeLabel("intervals")}</b></div>
+      ${hrNote}
     `;
+  }
+
+  function updateAdjustmentLabel(val = currentSettings.adjustment) {
+    if (!el.adjustmentValue) return;
+    const num = Number(val) || 0;
+    const miAdj = Math.round(num * 1.609344);
+    el.adjustmentValue.textContent = `${num >= 0 ? "+" : ""}${num} sec/km (${miAdj >= 0 ? "+" : ""}${miAdj} sec/mi)`;
+  }
+
+  function updateUnitButtons(unit) {
+    if (!el.unitKm || !el.unitMi) return;
+    el.unitKm.setAttribute("data-active", String(unit === "km"));
+    el.unitMi.setAttribute("data-active", String(unit === "mi"));
+  }
+
+  function updatePaceSourceVisibility(source = currentSettings.paceSource) {
+    const show = source === "trial";
+    const distWrap = document.getElementById("trialDistanceWrap");
+    const timeWrap = document.getElementById("trialTimeWrap");
+    if (distWrap) distWrap.style.display = show ? "block" : "none";
+    if (timeWrap) timeWrap.style.display = show ? "block" : "none";
   }
 
   function syncForm(settings) {
@@ -823,15 +1041,23 @@
     el.swimMinutes.value = settings.crossTraining.swim.minutes;
     el.strengthEnabled.checked = settings.crossTraining.strength.enabled;
     el.strengthMinutes.value = settings.crossTraining.strength.minutes;
+    el.paceSource.value = settings.paceSource;
+    el.trialDistance.value = settings.trialDistance;
+    el.trialTime.value = settings.trialTime;
+    el.adjustment.value = settings.adjustment;
+    el.maxHr.value = settings.maxHr;
+    el.easyHr.value = settings.easyHr;
+    updateUnitButtons(settings.unit);
+    updateAdjustmentLabel(settings.adjustment);
+    updatePaceSourceVisibility(settings.paceSource);
   }
 
   function applySettings(settings, opts = { updateUI: true }) {
     currentSettings = normalizeSettings(settings);
     CONFIG = buildConfigFromSettings(currentSettings);
-    PACE = computePaces(
-      parseTimeInput(currentSettings.goalTime) ?? parseTimeInput(DEFAULT_SETTINGS.goalTime),
-      parseTimeInput(currentSettings.recentTime) ?? parseTimeInput(DEFAULT_SETTINGS.recentTime)
-    );
+    BASE_ZONES = computeZonesFromSettings(currentSettings);
+    PACE = applyAdjustment(BASE_ZONES, currentSettings.adjustment);
+    currentUnit = currentSettings.unit;
     currentSignature = settingsSignature(currentSettings, CONFIG);
     if (opts.updateUI) {
       syncForm(currentSettings);
@@ -861,12 +1087,22 @@
       if (!Number.isFinite(num) || num < 0) throw new Error("Cross-training minutes must be zero or positive");
       return num;
     };
+    const trialVal = el.trialTime.value.trim() || DEFAULT_SETTINGS.trialTime;
+    const trialSec = parseTimeInput(trialVal);
+    if (el.paceSource.value === "trial" && !trialSec) throw new Error("Custom time trial time must be hh:mm or hh:mm:ss");
     return normalizeSettings({
       raceDate: raceDateVal,
       planLength: planLengthVal === "" ? "" : Number(planLengthVal),
       goalTime: goalVal,
       recentTime: recentVal,
       longRunDay: el.longRunDay.value,
+      paceSource: el.paceSource.value,
+      trialDistance: el.trialDistance.value,
+      trialTime: trialVal,
+      adjustment: Number(el.adjustment.value) || 0,
+      unit: currentUnit,
+      maxHr: el.maxHr.value,
+      easyHr: el.easyHr.value,
       crossTraining: {
         bike: { enabled: el.bikeEnabled.checked, minutes: minutesOrDefault(el.bikeMinutes, DEFAULT_SETTINGS.crossTraining.bike.minutes) },
         swim: { enabled: el.swimEnabled.checked, minutes: minutesOrDefault(el.swimMinutes, DEFAULT_SETTINGS.crossTraining.swim.minutes) },
@@ -884,6 +1120,13 @@
     renderWeek(state.plan, state.activeWeek);
     saveState({ plan: state.plan, activeWeek: state.activeWeek, selected });
     toast("Plan regenerated");
+  }
+
+  function refreshPaces(partial = {}) {
+    applySettings({ ...currentSettings, ...partial });
+    renderWeek(state.plan, state.activeWeek);
+    savePersonalizationSettings(currentSettings);
+    saveState({ plan: state.plan, activeWeek: state.activeWeek, selected });
   }
 
   function sportBadge(s) {
@@ -1001,6 +1244,7 @@
     sEl.setAttribute("data-status", session.status);
 
     const key = isKeyRun(session) ? "Key" : session.sport === "run" ? "Easy" : "Recovery";
+    const detailText = formatDetails(session.detailsTemplate || session.details || "");
     sEl.innerHTML = `
       <div class="session-head" role="button" aria-expanded="${UI.detailed}" tabindex="0">
         <div style="min-width:0">
@@ -1009,7 +1253,7 @@
         </div>
         <span class="chip">${escapeHtml(session.status)}</span>
       </div>
-      <div class="details">${escapeHtml(session.details || "")}</div>
+      <div class="details">${escapeHtml(detailText)}</div>
     `;
 
     const top = sEl.querySelector(".session-head");
@@ -1095,6 +1339,17 @@
         toast("Please fix personalization inputs");
       }
     });
+    el.paceSource.addEventListener("change", () => {
+      updatePaceSourceVisibility(el.paceSource.value);
+      refreshPaces({ paceSource: el.paceSource.value, trialDistance: el.trialDistance.value, trialTime: el.trialTime.value || currentSettings.trialTime });
+    });
+    el.trialDistance.addEventListener("change", () => refreshPaces({ trialDistance: el.trialDistance.value }));
+    el.trialTime.addEventListener("change", () => refreshPaces({ trialTime: el.trialTime.value || currentSettings.trialTime }));
+    el.adjustment.addEventListener("input", () => updateAdjustmentLabel(el.adjustment.value));
+    el.adjustment.addEventListener("change", () => refreshPaces({ adjustment: Number(el.adjustment.value) || 0 }));
+    el.unitKm.addEventListener("click", () => { if (currentSettings.unit !== "km") refreshPaces({ unit: "km" }); });
+    el.unitMi.addEventListener("click", () => { if (currentSettings.unit !== "mi") refreshPaces({ unit: "mi" }); });
+    [el.maxHr, el.easyHr].forEach((node) => node.addEventListener("change", () => refreshPaces({ maxHr: el.maxHr.value, easyHr: el.easyHr.value })));
   }
 
   window.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") changeWeek(-1); if (e.key === "ArrowRight") changeWeek(1); });
@@ -1113,10 +1368,8 @@
     const mergedCross = { ...currentSettings.crossTraining, ...(overrides.crossTraining || {}) };
     const merged = normalizeSettings({ ...currentSettings, ...overrides, crossTraining: mergedCross });
     const tempConfig = buildConfigFromSettings(merged);
-    const tempPace = computePaces(
-      parseTimeInput(merged.goalTime) ?? parseTimeInput(DEFAULT_SETTINGS.goalTime),
-      parseTimeInput(merged.recentTime) ?? parseTimeInput(DEFAULT_SETTINGS.recentTime)
-    );
+    const tempBase = computeZonesFromSettings(merged);
+    const tempPace = applyAdjustment(tempBase, merged.adjustment);
     return generatePlan({ pace: tempPace, settings: merged, config: tempConfig });
   }
   function runTests() {
@@ -1143,8 +1396,23 @@
       const bikeTotal = bikeSessions.reduce((a, b) => a + b.minutes, 0);
       assert("Bike minutes redistributed", bikeTotal === 80 && bikeSessions.every((s) => s.minutes === bikeSessions[0].minutes));
 
-      const paceCheck = computePaces(parseTimeInput("4:00:00"), parseTimeInput("1:55:00"));
-      assert("Goal MP adjusts slower", paceCheck.mp[0] > PACE.mp[0]);
+      const goalZones = computeZonesFromSource("goal", MARATHON_KM, parseTimeInput("3:30:00"), parseTimeInput("3:30:00"), parseTimeInput("1:40:00"));
+      assert("Goal MP around 4:55–5:05/km", goalZones.mp[0] >= 292 && goalZones.mp[1] <= 307);
+      const adjustedZones = applyAdjustment(goalZones, 30);
+      assert("Heat adjustment shifts easy", Math.abs(adjustedZones.easy[0] - goalZones.easy[0] - 30) < 1 && Math.abs(adjustedZones.mp[0] - goalZones.mp[0] - 30) < 1);
+      const mpSec = goalZones.mp[0];
+      const miSec = convertSecPerKmToUnit(mpSec, "mi");
+      const miLabel = secondsToPaceString(mpSec, "mi");
+      const expectedMi = `${Math.floor(miSec / 60)}:${String(Math.round(miSec % 60)).padStart(2, "0")}/mi`;
+      assert("Unit toggle converts MP", miLabel === expectedMi);
+      const beforeGuide = el.paceGuide.textContent;
+      refreshPaces({ adjustment: (currentSettings.adjustment || 0) + 5 });
+      const afterGuide = el.paceGuide.textContent;
+      assert("Pace guide reacts to adjustment", beforeGuide !== afterGuide);
+      refreshPaces({ paceSource: "trial", trialDistance: "5", trialTime: "0:22:00" });
+      const sourceGuide = el.paceGuide.textContent;
+      assert("Pace guide reacts to source change", sourceGuide !== afterGuide);
+      refreshPaces({ adjustment: prevSettings.adjustment, paceSource: prevSettings.paceSource, trialDistance: prevSettings.trialDistance, trialTime: prevSettings.trialTime, unit: prevSettings.unit });
 
       const w = generateWeek(0, { pace: PACE, settings: currentSettings });
       const plan = [w];
@@ -1164,12 +1432,12 @@
 
       const target = el.weekGrid.querySelector(".session"); if (target) { target.click(); assert("Selection updates action bar", el.selTitle.textContent === target.querySelector(".session-title").textContent); }
 
-      const persistenceSettings = normalizeSettings({ planLength: 10, longRunDay: "3" });
+      const persistenceSettings = normalizeSettings({ planLength: 10, longRunDay: "3", unit: "mi", adjustment: 8 });
       savePersonalizationSettings(persistenceSettings);
       applySettings(persistenceSettings, { updateUI: false });
       saveState({ plan: generatePlan({ pace: PACE, settings: currentSettings, config: CONFIG }), activeWeek: 0, selected: { weekIndex: 0, sessionId: null } });
       const persisted = normalizeSettings(loadPersonalizationSettings());
-      assert("Settings persisted", persisted.planLength === persistenceSettings.planLength && persisted.longRunDay === persistenceSettings.longRunDay);
+      assert("Settings persisted", persisted.planLength === persistenceSettings.planLength && persisted.longRunDay === persistenceSettings.longRunDay && persisted.unit === "mi" && persisted.adjustment === 8);
       const restoredPlan = loadState();
       assert("Plan state persisted", restoredPlan && restoredPlan.plan && restoredPlan.plan.length === CONFIG.weeks);
 
