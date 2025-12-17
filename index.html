@@ -407,6 +407,156 @@
       box-shadow: 0 0 0 3px rgba(255, 235, 59, 0.4);
       border-color: #FFC107;
     }
+
+    /* Classic Team Theme */
+    html[data-theme="classic-team"] {
+      --bg-page: #A3C1AD; /* Sage */
+      --bg-panel: #F6D600; /* Yellow */
+      --bg-muted: rgba(246, 214, 0, 0.4); /* Yellow tint */
+      --text-strong: #003DA5; /* Blue */
+      --text-muted: #A50034; /* Red */
+      --line: #F6A600; /* Orange */
+      --accent: #F6A600; /* Orange */
+      --accent-2: #A50034; /* Red */
+      --shadow-sm: 4px 4px 0 #F6A600;
+      --shadow-lg: 8px 8px 0 rgba(0, 61, 165, 0.2);
+
+      --done: #003DA5;
+      --missed: #A50034;
+      --planned: #A3C1AD;
+    }
+
+    html[data-theme="classic-team"] body {
+      font-weight: 500;
+    }
+
+    html[data-theme="classic-team"] header {
+       background: rgba(163, 193, 173, 0.95);
+       border-bottom: 4px solid var(--line);
+    }
+
+    html[data-theme="classic-team"] .logo {
+      background: #003DA5;
+      color: #F6D600;
+      box-shadow: 4px 4px 0 #F6A600;
+    }
+
+    /* Overrides to enforce palette */
+    html[data-theme="classic-team"] .card,
+    html[data-theme="classic-team"] .day-card,
+    html[data-theme="classic-team"] .week-summary,
+    html[data-theme="classic-team"] input,
+    html[data-theme="classic-team"] select,
+    html[data-theme="classic-team"] button,
+    html[data-theme="classic-team"] .settings-toggle,
+    html[data-theme="classic-team"] .pace-toggle,
+    html[data-theme="classic-team"] .pace-guide,
+    html[data-theme="classic-team"] .unit-toggle button,
+    html[data-theme="classic-team"] .view-toggle button,
+    html[data-theme="classic-team"] .mobile-view-toggle button,
+    html[data-theme="classic-team"] .week-summary-row,
+    html[data-theme="classic-team"] .toast {
+       background-color: var(--bg-panel);
+       border-color: var(--line);
+       border-width: 2px;
+    }
+
+    html[data-theme="classic-team"] .unit-toggle,
+    html[data-theme="classic-team"] .view-toggle,
+    html[data-theme="classic-team"] .mobile-view-toggle {
+        box-shadow: none;
+        background: transparent;
+        border: none;
+    }
+
+    html[data-theme="classic-team"] button {
+       background-color: #A50034;
+       color: #F6D600;
+       border: 2px solid #003DA5;
+    }
+
+    html[data-theme="classic-team"] .unit-toggle button[data-active="true"],
+    html[data-theme="classic-team"] .view-toggle button[data-active="true"],
+    html[data-theme="classic-team"] .mobile-view-toggle button[data-active="true"] {
+        background-color: #A50034;
+        color: #F6D600;
+    }
+
+    html[data-theme="classic-team"] .unit-toggle button[data-active="false"],
+    html[data-theme="classic-team"] .view-toggle button[data-active="false"],
+    html[data-theme="classic-team"] .mobile-view-toggle button[data-active="false"] {
+        background-color: #A3C1AD;
+        color: #003DA5;
+        border: 1px solid #003DA5;
+    }
+
+    /* Specific overrides for higher specificity elements */
+    html[data-theme="classic-team"] .form-group input,
+    html[data-theme="classic-team"] .form-group select,
+    html[data-theme="classic-team"] .xtrain-row input {
+       background-color: #F6D600;
+       color: #003DA5;
+       border: 2px solid #003DA5;
+    }
+
+    html[data-theme="classic-team"] .chip {
+        background-color: #F6D600;
+        border-color: #A50034;
+        color: #A50034;
+    }
+
+    html[data-theme="classic-team"] .card summary {
+        background-color: #F6A600; /* Orange for sections */
+        border-color: #003DA5;
+        color: #003DA5;
+    }
+
+    html[data-theme="classic-team"] .action-bar {
+        background-color: #A3C1AD;
+        border-top: 4px solid #F6A600;
+    }
+
+    html[data-theme="classic-team"] .action-bar button.done {
+        background-color: #003DA5;
+        border-color: #003DA5;
+        color: #F6D600;
+    }
+    html[data-theme="classic-team"] .action-bar button.miss {
+        background-color: #A50034;
+        border-color: #A50034;
+        color: #F6D600;
+    }
+    /* Planned button (generic button in row that isn't done/miss) */
+    html[data-theme="classic-team"] .action-bar button:not(.done):not(.miss) {
+        background-color: #A3C1AD; /* Sage */
+        border-color: #003DA5;
+        color: #003DA5;
+    }
+
+    /* Day rail gradient override */
+    html[data-theme="classic-team"] .day-rail {
+      background: linear-gradient(180deg, rgba(246, 214, 0, 0.5), #F6D600);
+      border-right: 2px solid var(--line);
+    }
+    html[data-theme="classic-team"] .day-body {
+      background: #F6D600;
+    }
+
+    html[data-theme="classic-team"] .status-green { background: #003DA5; border-color: #003DA5; }
+    html[data-theme="classic-team"] .status-red { background: #A50034; border-color: #A50034; }
+    html[data-theme="classic-team"] .status-gray { background: #A3C1AD; border-color: #003DA5; }
+    html[data-theme="classic-team"] .status-yellow { background: #F6A600; border-color: #F6A600; }
+
+    html[data-theme="classic-team"] .session[data-status="done"] {
+        border-color: #003DA5;
+        background-color: rgba(0, 61, 165, 0.1);
+        box-shadow: 0 0 0 2px #003DA5;
+    }
+    html[data-theme="classic-team"] .session[data-status="missed"] {
+        border-color: #A50034;
+        background-color: rgba(165, 0, 52, 0.1);
+        box-shadow: 0 0 0 2px #A50034;
+    }
   </style>
   <script>
     try {
@@ -536,6 +686,7 @@
               <option value="default">Default</option>
               <option value="purple-pastel">Pastel Purple</option>
               <option value="turf-triumph">Turf Triumph</option>
+              <option value="classic-team">Classic Team</option>
             </select>
             <small>Choose your color palette.</small>
           </div>
@@ -725,7 +876,7 @@
     const paceSource = ["goal", "recent", "trial"].includes(base.paceSource) ? base.paceSource : DEFAULT_SETTINGS.paceSource;
     const adjustment = Number.isFinite(Number(base.adjustment)) ? clamp(Number(base.adjustment), -20, 30) : DEFAULT_SETTINGS.adjustment;
     const unit = base.unit === "mi" ? "mi" : "km";
-    const theme = ["purple-pastel", "turf-triumph"].includes(base.theme) ? base.theme : "default";
+    const theme = ["purple-pastel", "turf-triumph", "classic-team"].includes(base.theme) ? base.theme : "default";
     const trialDistance = String(base.trialDistance || DEFAULT_SETTINGS.trialDistance);
     const trialTime = normalizeTimeString(base.trialTime, DEFAULT_SETTINGS.trialTime);
     const maxHr = base.maxHr === null || base.maxHr === undefined ? "" : String(base.maxHr).trim();
